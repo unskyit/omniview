@@ -5,9 +5,10 @@
  * - Handles MULTIPLE queued file parsing directly to IndexedDB
  */
 
-const CACHE_NAME = 'simply-viewer-cache-v3.0.0';
+// CRITICAL BUMP: Forces the browser to discard the old UI and cache the new Native UX overhaul
+const CACHE_NAME = 'simply-viewer-cache-v4.0.0';
 const DB_NAME = 'OmniviewDB';
-const DB_VERSION = 3; // CRITICAL FIX: Synced with app.js
+const DB_VERSION = 3; 
 const STORE_SHARED = 'shared_queue';
 const STORE_HISTORY = 'recent_history';
 
