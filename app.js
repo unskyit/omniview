@@ -1,5 +1,7 @@
 /**
  * Simply Viewer Core Application Engine (app.js)
+ * - Robust Error handling for closing loops to guarantee Back button functions.
+ * - Native PDF Pinch to Zoom direct interception to block browser scroll overriding.
  */
 
 (function () {
@@ -28,7 +30,6 @@
     fileInput: document.getElementById('file-input'),
     btnInstallPwa: document.getElementById('btn-install-pwa'),
     
-    // Home & History Views
     btnHeaderOpen: document.getElementById('btn-header-open'),
     emptyState: document.getElementById('empty-state'),
     btnOpenHistory: document.getElementById('btn-open-history'),
@@ -39,7 +40,6 @@
     btnClearAll: document.getElementById('btn-clear-all'),
     historyList: document.getElementById('history-list'),
 
-    // Viewer Shell
     viewerView: document.getElementById('viewer-view'),
     viewerTopbar: document.getElementById('viewer-topbar'),
     btnViewerBack: document.getElementById('btn-viewer-back'),
@@ -48,13 +48,11 @@
     btnSaveFile: document.getElementById('btn-save-file'),
     thumbnailStrip: document.getElementById('thumbnail-strip'),
 
-    // Media Stages
     stageImage: document.getElementById('stage-image'),
     stageVideo: document.getElementById('stage-video'),
     stageAudio: document.getElementById('stage-audio'),
     stagePdf: document.getElementById('stage-pdf'),
 
-    // Image Controls
     imageTouchSurface: document.getElementById('image-touch-surface'),
     viewerImg: document.getElementById('viewer-img'),
     imageHud: document.getElementById('image-hud'),
@@ -63,7 +61,6 @@
     btnImgZoomIn: document.getElementById('btn-img-zoom-in'),
     btnImgZoomReset: document.getElementById('btn-img-zoom-reset'),
 
-    // Video Controls
     videoContainer: document.getElementById('video-container'),
     viewerVideo: document.getElementById('viewer-video'),
     videoOverlay: document.getElementById('video-overlay'),
@@ -81,7 +78,6 @@
     btnVideoSpeed: document.getElementById('btn-video-speed'),
     btnVideoFullscreen: document.getElementById('btn-video-fullscreen'),
 
-    // Audio Controls
     viewerAudio: document.getElementById('viewer-audio'),
     audioTitle: document.getElementById('audio-title'),
     audioSubtitle: document.getElementById('audio-subtitle'),
@@ -97,7 +93,6 @@
     btnAudioFf: document.getElementById('btn-audio-ff'),
     btnAudioSpeed: document.getElementById('btn-audio-speed'),
 
-    // PDF Controls
     pdfScrollContainer: document.getElementById('pdf-scroll-container'),
     pdfPagesList: document.getElementById('pdf-pages-list'),
     pdfHud: document.getElementById('pdf-hud'),
@@ -106,7 +101,6 @@
     pdfZoomLabel: document.getElementById('pdf-zoom-label'),
     btnPdfZoomIn: document.getElementById('btn-pdf-zoom-in'),
 
-    // Modals
     renameModal: document.getElementById('rename-modal'),
     renameForm: document.getElementById('rename-form'),
     renameInput: document.getElementById('rename-input'),
@@ -115,7 +109,7 @@
     toastContainer: document.getElementById('toast-container')
   };
 
-  /* THEME MANAGER (With PWA Meta Color Sync) */
+  /* THEME MANAGER */
   function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'system';
     applyTheme(savedTheme);
@@ -436,27 +430,33 @@
     });
   }
 
+  // ROBUST CLEANUP TO PROTECT BACK BUTTON LOGIC
   function releaseActiveMediaResources() {
-    if (state.activeObjectUrl) { try { URL.revokeObjectURL(state.activeObjectUrl); } catch (err) {} state.activeObjectUrl = null; }
-    if (dom.viewerImg) { dom.viewerImg.removeAttribute('src'); dom.viewerImg.style.transform = ''; }
-    state.img.pointers.clear(); state.img.scale = 1; state.img.tx = 0; state.img.ty = 0;
-    
-    if (state.video.inactivityTimer) { clearTimeout(state.video.inactivityTimer); state.video.inactivityTimer = null; }
-    if (dom.viewerVideo) { try { dom.viewerVideo.pause(); dom.viewerVideo.removeAttribute('src'); dom.viewerVideo.load(); } catch (e) {} }
-    
-    if (state.audio.rafId) { cancelAnimationFrame(state.audio.rafId); state.audio.rafId = null; }
-    if (dom.viewerAudio) { try { dom.viewerAudio.pause(); dom.viewerAudio.removeAttribute('src'); dom.viewerAudio.load(); } catch (e) {} }
-    if (dom.audioVisualizer) { const ctx = dom.audioVisualizer.getContext('2d'); if (ctx) ctx.clearRect(0, 0, dom.audioVisualizer.width, dom.audioVisualizer.height); }
-    
-    if (state.pdf.observer) { state.pdf.observer.disconnect(); state.pdf.observer = null; }
-    for (const [, task] of state.pdf.renderTasks.entries()) { try { if (task && typeof task.cancel === 'function') task.cancel(); } catch (e) {} }
-    state.pdf.renderTasks.clear(); state.pdf.renderedPages.clear();
-    if (state.pdf.loadingTask) { try { state.pdf.loadingTask.destroy(); } catch (e) {} state.pdf.loadingTask = null; }
-    if (state.pdf.doc && typeof state.pdf.doc.destroy === 'function') { try { state.pdf.doc.destroy(); } catch (e) {} }
-    state.pdf.doc = null; dom.pdfPagesList.style.transform = 'none';
-    if (dom.pdfPagesList) {
-      dom.pdfPagesList.querySelectorAll('canvas').forEach((c) => { const cCtx = c.getContext('2d'); if (cCtx) cCtx.clearRect(0, 0, c.width, c.height); c.width = 0; c.height = 0; });
-      dom.pdfPagesList.innerHTML = '';
+    try {
+        if (state.activeObjectUrl) { try { URL.revokeObjectURL(state.activeObjectUrl); } catch(e){} state.activeObjectUrl = null; }
+        if (dom.viewerImg) { dom.viewerImg.removeAttribute('src'); dom.viewerImg.style.transform = ''; }
+        state.img.pointers.clear(); state.img.scale = 1; state.img.tx = 0; state.img.ty = 0;
+        
+        if (state.video.inactivityTimer) { clearTimeout(state.video.inactivityTimer); state.video.inactivityTimer = null; }
+        if (dom.viewerVideo) { try { dom.viewerVideo.pause(); dom.viewerVideo.removeAttribute('src'); dom.viewerVideo.load(); } catch(e){} }
+        
+        if (state.audio.rafId) { cancelAnimationFrame(state.audio.rafId); state.audio.rafId = null; }
+        if (dom.viewerAudio) { try { dom.viewerAudio.pause(); dom.viewerAudio.removeAttribute('src'); dom.viewerAudio.load(); } catch(e){} }
+        if (dom.audioVisualizer) { const ctx = dom.audioVisualizer.getContext('2d'); if (ctx) ctx.clearRect(0, 0, dom.audioVisualizer.width, dom.audioVisualizer.height); }
+        
+        if (state.pdf.observer) { state.pdf.observer.disconnect(); state.pdf.observer = null; }
+        for (const [, task] of state.pdf.renderTasks.entries()) { try { if (task && typeof task.cancel === 'function') task.cancel(); } catch(e){} }
+        state.pdf.renderTasks.clear(); state.pdf.renderedPages.clear();
+        if (state.pdf.loadingTask) { try { state.pdf.loadingTask.destroy(); } catch(e){} state.pdf.loadingTask = null; }
+        if (state.pdf.doc && typeof state.pdf.doc.destroy === 'function') { try { state.pdf.doc.destroy(); } catch(e){} state.pdf.doc = null; }
+        
+        if (dom.pdfPagesList) {
+          dom.pdfPagesList.style.transform = 'none';
+          dom.pdfPagesList.querySelectorAll('canvas').forEach((c) => { const cCtx = c.getContext('2d'); if (cCtx) cCtx.clearRect(0, 0, c.width, c.height); c.width = 0; c.height = 0; });
+          dom.pdfPagesList.innerHTML = '';
+        }
+    } catch(err) {
+        console.error("Cleanup intercepted safely:", err);
     }
   }
 
@@ -485,7 +485,6 @@
     const surface = dom.imageTouchSurface;
     const getDistance = (p1, p2) => Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
     
-    // Hide UI on tap
     surface.addEventListener('click', (e) => { if (!e.target.closest('.floating-hud')) toggleChromeVisibility(); });
 
     surface.addEventListener('pointerdown', (e) => {
@@ -667,13 +666,12 @@
     dom.btnAudioSpeed.addEventListener('click', () => { state.audio.speedIndex = (state.audio.speedIndex + 1) % PLAYBACK_SPEEDS.length; const rate = PLAYBACK_SPEEDS[state.audio.speedIndex]; audio.playbackRate = rate; dom.btnAudioSpeed.textContent = `${rate.toFixed(rate % 1 === 0 ? 1 : 2).replace(/0$/, '')}x`; });
   }
 
-  /* PDF VIEWER (Robust 13MB Worker + Pinch Zoom) */
+  /* PDF VIEWER (Robust 13MB Worker + Native Intercept Pinch Zoom) */
   async function launchPdfViewer(objectUrl) {
     dom.stagePdf.classList.remove('hidden'); state.pdf.zoomScale = 1.0; state.pdf.currentPage = 1;
     dom.pdfZoomLabel.textContent = '100%'; dom.pdfPageIndicator.textContent = 'Loading...'; dom.pdfPagesList.innerHTML = ''; dom.pdfPagesList.style.transform = 'none';
     if (!window.pdfjsLib) { showToast('PDF engine unavailable'); return; }
     
-    // Explicit relative path fallback fixing heavy renders
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'vendor/pdf.worker.min.js';
     
     try {
@@ -683,9 +681,7 @@
       dom.pdfPageIndicator.textContent = `1 / ${state.pdf.numPages}`;
       await buildPdfPageSlots();
     } catch (error) { 
-      console.error(error); 
-      showToast('Error loading PDF document.'); 
-      dom.pdfPageIndicator.textContent = 'Error'; 
+      console.error(error); showToast('Error loading PDF document.'); dom.pdfPageIndicator.textContent = 'Error'; 
     }
   }
 
@@ -696,7 +692,6 @@
     
     try {
       const firstPage = await state.pdf.doc.getPage(1), unscaledVp = firstPage.getViewport({ scale: 1.0 });
-      // Limit base fit scale for large files to avoid canvas memory crash
       const baseFitScale = Math.min((window.innerWidth - 32) / unscaledVp.width, 2.0) * state.pdf.zoomScale;
       const slotWidth = Math.round(unscaledVp.width * baseFitScale), slotHeight = Math.round(unscaledVp.height * baseFitScale);
 
@@ -716,7 +711,6 @@
     state.pdf.renderedPages.add(pageNum);
     try {
       const page = await state.pdf.doc.getPage(pageNum), viewport = page.getViewport({ scale: fitScale });
-      // Cap DPR on mobile for giant PDFs (prevents canvas memory blowouts on 13MB+ files)
       const dpr = Math.min(window.devicePixelRatio || 1, 2.0); 
       slotEl.style.width = `${Math.round(viewport.width)}px`; slotEl.style.height = `${Math.round(viewport.height)}px`;
       const canvas = document.createElement('canvas'); canvas.className = 'pdf-page-canvas';
@@ -740,43 +734,42 @@
       if (closestPage !== state.pdf.currentPage) { state.pdf.currentPage = closestPage; dom.pdfPageIndicator.textContent = `${state.pdf.currentPage} / ${state.pdf.numPages}`; }
     }, {passive: true});
 
-    // Hide HUD on Center Tap
-    dom.stagePdf.addEventListener('click', (e) => {
-        if (!e.target.closest('.floating-hud')) toggleChromeVisibility();
-    });
+    dom.stagePdf.addEventListener('click', (e) => { if (!e.target.closest('.floating-hud')) toggleChromeVisibility(); });
 
-    // Native Pinch Zoom Implementation for PDF
-    let pdfPinchStart = 0; let pdfPinchInitialScale = 1;
-    dom.stagePdf.addEventListener('touchstart', (e) => {
+    // Native PDF Pinch Zoom intercepts on the scroll container to block native scrolling
+    let pdfPinchStart = 0; 
+    let pdfPinchInitialScale = 1;
+    let activePinchScale = 1;
+
+    dom.pdfScrollContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
             pdfPinchStart = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             pdfPinchInitialScale = state.pdf.zoomScale;
+            activePinchScale = 1;
         }
     }, {passive: true});
     
-    dom.stagePdf.addEventListener('touchmove', (e) => {
+    // Critical: passive: false allows e.preventDefault() to stop native scroll interference
+    dom.pdfScrollContainer.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2 && pdfPinchStart > 0) {
+            e.preventDefault(); 
             const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const scaleDiff = dist / pdfPinchStart;
-            // Visual feedback using CSS transform
-            dom.pdfPagesList.style.transform = `scale(${Math.min(3.0, Math.max(0.5, scaleDiff))})`;
+            activePinchScale = dist / pdfPinchStart;
+            dom.pdfPagesList.style.transform = `scale(${Math.min(3.0, Math.max(0.5, activePinchScale))})`;
         }
-    }, {passive: true});
+    }, {passive: false});
     
-    dom.stagePdf.addEventListener('touchend', (e) => {
+    dom.pdfScrollContainer.addEventListener('touchend', (e) => {
         if (pdfPinchStart > 0 && e.touches.length < 2) {
-             const transformMatrix = window.getComputedStyle(dom.pdfPagesList).transform;
-             if (transformMatrix !== 'none') {
-                 const matrixValues = transformMatrix.match(/matrix.*\((.+)\)/);
-                 if (matrixValues && matrixValues[1]) {
-                     const currentVisualScale = parseFloat(matrixValues[1].split(',')[0]);
-                     const newScale = pdfPinchInitialScale * currentVisualScale;
-                     state.pdf.zoomScale = Math.min(3.0, Math.max(0.5, +(newScale).toFixed(2)));
-                     dom.pdfZoomLabel.textContent = `${Math.round(state.pdf.zoomScale * 100)}%`;
-                     buildPdfPageSlots(); // Re-render crispy text at new scale
-                 }
-             }
-             pdfPinchStart = 0; dom.pdfPagesList.style.transform = 'none';
+            if (activePinchScale !== 1) {
+                const newScale = pdfPinchInitialScale * activePinchScale;
+                state.pdf.zoomScale = Math.min(3.0, Math.max(0.5, +(newScale).toFixed(2)));
+                dom.pdfZoomLabel.textContent = `${Math.round(state.pdf.zoomScale * 100)}%`;
+                buildPdfPageSlots(); // Re-render crispy text at new scale
+            }
+            pdfPinchStart = 0; 
+            activePinchScale = 1;
+            dom.pdfPagesList.style.transform = 'none';
         }
     });
 
@@ -836,14 +829,26 @@
     showToast(`Downloading`);
   }
 
+  // ROBUST CLOSE VIEWER (BACK BUTTON FIX)
   function closeViewer(fromPopstate = false) {
     if (!state.isViewerOpen) return;
     state.isClosingViewer = true; 
-    if(state.queue) { for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } } }
-    state.queue = []; releaseActiveMediaResources();
+    
+    // Wrapped in strict try/catch so failure doesn't freeze the back button UI
+    try {
+        if(state.queue) { for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } } }
+        state.queue = []; 
+        releaseActiveMediaResources();
+    } catch(e) { console.error("Force Close Override:", e); }
+    
     dom.viewerView.classList.add('hidden'); dom.viewerView.setAttribute('aria-hidden', 'true');
     state.isViewerOpen = false; state.activeRecord = null;
-    if (!fromPopstate && (window.location.hash === '#viewer' || window.location.hash === '#rename')) { state.suppressPopstate = true; history.back(); }
+    
+    if (!fromPopstate) {
+        if (window.location.hash === '#viewer' || window.location.hash === '#rename') { 
+            state.suppressPopstate = true; history.back(); 
+        } 
+    }
   }
 
   function openConfirmClearModal() { dom.confirmModal.classList.remove('hidden'); state.isConfirmOpen = true; if (window.location.hash !== '#confirm-clear') history.pushState({ view: 'confirm-clear' }, '', '#confirm-clear'); }
@@ -888,7 +893,6 @@
     window.addEventListener('dragover', (e) => e.preventDefault());
     window.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files) ingestFilesArray(Array.from(e.dataTransfer.files)); });
     
-    // History Sheet Bindings
     dom.btnOpenHistory.addEventListener('click', openHistorySheet);
     dom.btnCloseHistory.addEventListener('click', () => closeHistorySheet(false));
 
@@ -902,7 +906,10 @@
     dom.btnClearAll.addEventListener('click', openConfirmClearModal);
     dom.btnConfirmCancel.addEventListener('click', () => closeConfirmClearModal(false));
     dom.btnConfirmAccept.addEventListener('click', async () => { await clearAllHistoryRecords(); renderHistoryList(); closeConfirmClearModal(false); showToast('History cleared'); });
+    
+    // Primary Header Back Button Listener
     dom.btnViewerBack.addEventListener('click', () => closeViewer(false));
+    
     dom.btnRenameTrigger.addEventListener('click', openRenameModal);
     dom.btnSaveFile.addEventListener('click', saveActiveFileToDevice);
     dom.btnRenameCancel.addEventListener('click', () => closeRenameModal(false));

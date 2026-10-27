@@ -34,9 +34,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <!-- Install PWA -->
-        <button id="btn-install-pwa" type="button" class="btn btn-secondary btn-sm hidden" title="Install App">
-          <span class="btn-label">Install</span>
+        <!-- Unobtrusive Install PWA Icon -->
+        <button id="btn-install-pwa" type="button" class="icon-btn-sm hidden" aria-label="Install App" title="Install App">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
         </button>
         <!-- Theme Toggle (Sun/Moon) -->
         <button id="btn-theme-toggle" type="button" class="icon-btn-sm" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
@@ -203,10 +207,9 @@
       </div>
     </div>
 
-    <!-- PDF STAGE (Upgraded with Pinch Zoom) -->
+    <!-- PDF STAGE (Native Pinch Interception) -->
     <div id="stage-pdf" class="viewer-stage hidden swipe-target">
       <div id="pdf-scroll-container" class="pdf-scroll-container">
-        <!-- Wrapper handles CSS scaling during pinch -->
         <div id="pdf-pages-list" class="pdf-pages-list"></div>
       </div>
       <div id="pdf-hud" class="floating-hud">
