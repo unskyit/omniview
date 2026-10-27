@@ -5,9 +5,9 @@
  * - Handles MULTIPLE queued file parsing directly to IndexedDB
  */
 
-const CACHE_NAME = 'simply-viewer-cache-v1.0.0';
+const CACHE_NAME = 'simply-viewer-cache-v2.0.0';
 const DB_NAME = 'OmniviewDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_SHARED = 'shared_queue';
 const STORE_HISTORY = 'recent_history';
 
