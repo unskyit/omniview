@@ -1,9 +1,9 @@
 /**
  * Simply Viewer Core Application Engine (app.js)
- * - Multi-file Gallery Queue with zero-bloat RAM management.
- * - Native swipe gestures across media stages.
- * - Intelligent continuous scroll scaling for PDF.js.
- * - Dynamic crisp resizing for Audio Visualizer Canvas.
+ * - True Light/Dark Mode Manager
+ * - Race-Condition safe Video playback (solves background playback bug)
+ * - Canvas frame extraction for Video Thumbnails in Queue Strip
+ * - Native swipe gestures & dynamic ResizeObserver for Audio Canvas
  */
 
 (function () {
@@ -20,17 +20,17 @@
     queue: [], queueIndex: 0,
     activeRecord: null, activeObjectUrl: null,
     isViewerOpen: false, isRenameOpen: false, isConfirmOpen: false, suppressPopstate: false,
-    deferredInstallPrompt: null, chromeHidden: false,
+    deferredInstallPrompt: null, chromeHidden: false, isClosingViewer: false,
     img: { scale: 1, minScale: 1, maxScale: 6, tx: 0, ty: 0, pointers: new Map(), movedDuringTouch: false },
-    video: { speedIndex: 2, showRemaining: false, inactivityTimer: null, isScrubbing: false, lastTapTime: 0, tapTimer: null },
+    video: { speedIndex: 2, showRemaining: false, inactivityTimer: null, isScrubbing: false, lastTapTime: 0, tapTimer: null, playPromise: null },
     audio: { speedIndex: 2, isLooping: false, isScrubbing: false, rafId: null, useFallbackVisualizer: false },
     pdf: { doc: null, loadingTask: null, numPages: 0, currentPage: 1, zoomScale: 1.0, renderedPages: new Set(), renderTasks: new Map() }
   };
 
   const dom = {
+    btnThemeToggle: document.getElementById('btn-theme-toggle'),
     fileInput: document.getElementById('file-input'),
     btnDemoMedia: document.getElementById('btn-demo-media'),
-    btnInstallPwa: document.getElementById('btn-install-pwa'),
     btnEmptyOpen: document.getElementById('btn-empty-open'),
     fabOpenFile: document.getElementById('fab-open-file'),
     filterChips: document.getElementById('filter-chips'),
@@ -50,7 +50,6 @@
     stageVideo: document.getElementById('stage-video'),
     stageAudio: document.getElementById('stage-audio'),
     stagePdf: document.getElementById('stage-pdf'),
-    
     thumbnailStrip: document.getElementById('thumbnail-strip'),
 
     imageTouchSurface: document.getElementById('image-touch-surface'),
@@ -113,6 +112,38 @@
     toastContainer: document.getElementById('toast-container')
   };
 
+  /* THEME MANAGER */
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    applyTheme(savedTheme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (localStorage.getItem('theme') === 'system' || !localStorage.getItem('theme')) applyTheme('system');
+    });
+    
+    // Toggle behavior: if system is light -> dark. If dark -> light.
+    dom.btnThemeToggle.addEventListener('click', () => {
+       const current = document.documentElement.getAttribute('data-theme');
+       let nextTheme = current === 'dark' ? 'light' : 'dark';
+       
+       if (current === 'system') {
+           const isSysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+           nextTheme = isSysDark ? 'light' : 'dark';
+       }
+       
+       localStorage.setItem('theme', nextTheme);
+       applyTheme(nextTheme);
+    });
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'system') {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
   function showToast(message, duration = 2600) {
     if (!dom.toastContainer) return;
     const toast = document.createElement('div');
@@ -171,6 +202,7 @@
     return 'ov-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
   }
 
+  /* INDEXEDDB */
   function initDatabase() {
     return new Promise((resolve) => {
       if (!('indexedDB' in window)) { resolve(null); return; }
@@ -232,6 +264,7 @@
     });
   }
 
+  /* CONSUME QUEUE */
   async function consumeSharedQueue() {
     if (!state.db) return;
     return new Promise((resolve) => {
@@ -248,7 +281,10 @@
             files.push(rawBlob instanceof File ? rawBlob : new File([rawBlob], item.name || 'shared', { type: item.type || rawBlob.type }));
           }
         }
-        await ingestFilesArray(files);
+        
+        if (files.length > 0) {
+            await ingestFilesArray(files, true);
+        }
         resolve(true);
       };
       getAllReq.onerror = () => resolve(false);
@@ -257,10 +293,10 @@
 
   function getCategoryIconSvg(category) {
     switch (category) {
-      case 'image': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><polyline points="21 15 16 10 5 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-      case 'video': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/></svg>`;
-      case 'audio': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-      case 'pdf': default: return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="17" x2="13" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+      case 'image': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><polyline points="21 15 16 10 5 21"/></svg>`;
+      case 'video': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none"/></svg>`;
+      case 'audio': return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+      case 'pdf': default: return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`;
     }
   }
 
@@ -284,19 +320,19 @@
       
       meta.appendChild(title); meta.appendChild(sub); left.appendChild(badge); left.appendChild(meta);
       const delBtn = document.createElement('button'); delBtn.className = 'card-delete-btn';
-      delBtn.innerHTML = `<svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+      delBtn.innerHTML = `<svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2"/></svg>`;
       
       delBtn.addEventListener('click', async (e) => { e.stopPropagation(); await deleteHistoryRecord(item.id); renderHistoryList(); showToast('Removed from history'); });
       card.addEventListener('click', () => { 
         state.queue = [item]; state.queueIndex = 0;
-        buildThumbnailStrip(); loadQueueItem(0); 
+        buildThumbnailStrip(); loadQueueItem(0, false); 
       });
       card.appendChild(left); card.appendChild(delBtn); dom.historyList.appendChild(card);
     });
   }
 
   /* MEDIA QUEUE & THUMBNAILS (RAM Optimized) */
-  async function ingestFilesArray(filesArray) {
+  async function ingestFilesArray(filesArray, fromShare = false) {
     if(!filesArray || filesArray.length === 0) return;
     let addedCount = 0; state.queue = [];
     
@@ -314,13 +350,35 @@
     else if (addedCount === 0) { showToast('Unsupported format.'); return; }
     
     buildThumbnailStrip();
-    loadQueueItem(0);
+    loadQueueItem(0, fromShare);
+  }
+
+  function extractVideoThumbnail(file) {
+    return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.autoplay = false; video.muted = true; video.playsInline = true;
+        video.src = URL.createObjectURL(file);
+        video.onloadeddata = () => { video.currentTime = 1; }; // Extract 1s mark
+        video.onseeked = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 160; canvas.height = 160;
+            const ctx = canvas.getContext('2d');
+            // Center crop fill
+            const ratio = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+            const w = video.videoWidth * ratio, h = video.videoHeight * ratio;
+            ctx.drawImage(video, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+            canvas.toBlob((blob) => {
+                URL.revokeObjectURL(video.src);
+                resolve(URL.createObjectURL(blob));
+            }, 'image/jpeg', 0.7);
+        };
+        video.onerror = () => { resolve(null); };
+    });
   }
 
   function buildThumbnailStrip() {
     dom.thumbnailStrip.innerHTML = '';
     
-    // Revoke old thumbnail URLs
     if(state.queue) {
        for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } }
     }
@@ -331,22 +389,33 @@
     state.queue.forEach((record, index) => {
        const box = document.createElement('div');
        box.className = 'thumb-box';
+       
        if (record.category === 'image') {
           record.thumbUrl = URL.createObjectURL(record.blob);
-          const img = document.createElement('img');
-          img.src = record.thumbUrl;
+          const img = document.createElement('img'); img.src = record.thumbUrl;
           box.appendChild(img);
+       } else if (record.category === 'video') {
+          box.innerHTML = getCategoryIconSvg('video');
+          extractVideoThumbnail(record.blob).then(url => {
+              if (url) {
+                  record.thumbUrl = url;
+                  box.innerHTML = `<img src="${url}" /><div class="thumb-video-badge"><svg class="icon-xs" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>`;
+              }
+          });
        } else {
           box.innerHTML = getCategoryIconSvg(record.category);
        }
-       box.addEventListener('click', () => loadQueueItem(index));
+       
+       box.addEventListener('click', () => loadQueueItem(index, false));
        dom.thumbnailStrip.appendChild(box);
     });
   }
 
-  async function loadQueueItem(index) {
+  async function loadQueueItem(index, fromShare = false) {
     if (index < 0 || index >= state.queue.length) return;
-    releaseActiveMediaResources(); // Drops high-res object URL from RAM immediately
+    
+    // Crucial: Release old resources immediately so we don't leak RAM on huge queues
+    releaseActiveMediaResources(); 
     
     state.queueIndex = index;
     const record = state.queue[index];
@@ -360,13 +429,23 @@
     if(state.queue.length > 1) {
        Array.from(dom.thumbnailStrip.children).forEach((box, i) => {
            box.classList.toggle('active', i === index);
-           if(i === index) box.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+           if(i === index) box.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
        });
     }
 
     dom.stageImage.classList.add('hidden'); dom.stageVideo.classList.add('hidden'); dom.stageAudio.classList.add('hidden'); dom.stagePdf.classList.add('hidden');
-    dom.viewerView.classList.remove('hidden'); dom.viewerView.setAttribute('aria-hidden', 'false'); state.isViewerOpen = true;
-    if (window.location.hash !== '#viewer' && window.location.hash !== '#rename') history.pushState({ view: 'viewer' }, '', '#viewer');
+    dom.viewerView.classList.remove('hidden'); dom.viewerView.setAttribute('aria-hidden', 'false'); 
+    state.isViewerOpen = true;
+    state.isClosingViewer = false;
+    
+    // Ensure history state is updated properly, preventing immediate popstate backout on share
+    if (window.location.hash !== '#viewer' && window.location.hash !== '#rename') {
+        if (fromShare) {
+            history.replaceState({ view: 'viewer' }, '', '#viewer');
+        } else {
+            history.pushState({ view: 'viewer' }, '', '#viewer');
+        }
+    }
 
     switch (record.category) {
       case 'image': launchImageViewer(state.activeObjectUrl); break;
@@ -391,11 +470,8 @@
     targets.forEach(target => {
        let startX = 0, startY = 0, isSwiping = false;
        target.addEventListener('touchstart', (e) => {
-          // Disable swipe queue jump if interacting with video controls
           if(e.target.closest('.video-overlay') || e.target.closest('.audio-card')) return; 
-          // Disable swipe if zoomed into image
           if(state.activeRecord && state.activeRecord.category === 'image' && state.img.scale > 1) return;
-          
           startX = e.touches[0].clientX; startY = e.touches[0].clientY;
           isSwiping = true;
        }, {passive: true});
@@ -405,8 +481,8 @@
           const diffX = e.changedTouches[0].clientX - startX;
           const diffY = e.changedTouches[0].clientY - startY;
           if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
-             if (diffX > 0 && state.queueIndex > 0) loadQueueItem(state.queueIndex - 1);
-             else if (diffX < 0 && state.queueIndex < state.queue.length - 1) loadQueueItem(state.queueIndex + 1);
+             if (diffX > 0 && state.queueIndex > 0) loadQueueItem(state.queueIndex - 1, false);
+             else if (diffX < 0 && state.queueIndex < state.queue.length - 1) loadQueueItem(state.queueIndex + 1, false);
           }
           isSwiping = false;
        });
@@ -417,11 +493,14 @@
     if (state.activeObjectUrl) { try { URL.revokeObjectURL(state.activeObjectUrl); } catch (err) {} state.activeObjectUrl = null; }
     if (dom.viewerImg) { dom.viewerImg.removeAttribute('src'); dom.viewerImg.style.transform = ''; }
     state.img.pointers.clear(); state.img.scale = 1; state.img.tx = 0; state.img.ty = 0;
+    
     if (state.video.inactivityTimer) { clearTimeout(state.video.inactivityTimer); state.video.inactivityTimer = null; }
     if (dom.viewerVideo) { try { dom.viewerVideo.pause(); dom.viewerVideo.removeAttribute('src'); dom.viewerVideo.load(); } catch (e) {} }
+    
     if (state.audio.rafId) { cancelAnimationFrame(state.audio.rafId); state.audio.rafId = null; }
     if (dom.viewerAudio) { try { dom.viewerAudio.pause(); dom.viewerAudio.removeAttribute('src'); dom.viewerAudio.load(); } catch (e) {} }
     if (dom.audioVisualizer) { const ctx = dom.audioVisualizer.getContext('2d'); if (ctx) ctx.clearRect(0, 0, dom.audioVisualizer.width, dom.audioVisualizer.height); }
+    
     if (state.pdf.observer) { state.pdf.observer.disconnect(); state.pdf.observer = null; }
     for (const [, task] of state.pdf.renderTasks.entries()) { try { if (task && typeof task.cancel === 'function') task.cancel(); } catch (e) {} }
     state.pdf.renderTasks.clear(); state.pdf.renderedPages.clear();
@@ -492,12 +571,19 @@
     dom.btnImgZoomReset.addEventListener('click', (e) => { e.stopPropagation(); zoomImageTo(1, true); });
   }
 
-  /* VIDEO PLAYER */
+  /* VIDEO PLAYER (Race Condition Free) */
   function launchVideoPlayer(objectUrl) {
     dom.stageVideo.classList.remove('hidden'); state.video.speedIndex = 2; dom.btnVideoSpeed.textContent = '1.0x';
     dom.videoScrubber.value = '0'; updateScrubberFill(dom.videoScrubber); dom.videoElapsed.textContent = '00:00'; dom.videoDuration.textContent = '00:00';
     dom.viewerVideo.src = objectUrl; dom.viewerVideo.playbackRate = 1.0; showVideoOverlayWithAutoHide();
-    dom.viewerVideo.play().catch(() => { syncVideoPlayButtons(); });
+    
+    state.video.playPromise = dom.viewerVideo.play();
+    if (state.video.playPromise !== undefined) {
+        state.video.playPromise.then(() => {
+            if (state.isClosingViewer) { dom.viewerVideo.pause(); } // Race condition fix
+            else { syncVideoPlayButtons(); }
+        }).catch(() => { syncVideoPlayButtons(); });
+    }
   }
   function syncVideoPlayButtons() { const paused = dom.viewerVideo.paused; dom.iconVideoPlay.classList.toggle('hidden', !paused); dom.iconVideoPause.classList.toggle('hidden', paused); }
   function updateVideoTimeDisplay() {
@@ -549,27 +635,32 @@
     dom.btnVideoFullscreen.addEventListener('click', async (e) => { e.stopPropagation(); try { if (!document.fullscreenElement) { dom.stageVideo.requestFullscreen ? await dom.stageVideo.requestFullscreen() : video.webkitEnterFullscreen(); } else await document.exitFullscreen(); } catch (err) {} showVideoOverlayWithAutoHide(); });
   }
 
-  /* AUDIO PLAYER (Modernized Engine) */
+  /* AUDIO PLAYER (Canvas ResizeObserver fixing squish bug) */
   function launchAudioPlayer(objectUrl, record) {
     dom.stageAudio.classList.remove('hidden');
     state.audio.speedIndex = 2; state.audio.isLooping = false;
     dom.audioTitle.textContent = record.name;
     const { ext } = splitFilenameAndExtension(record.name);
     dom.audioSubtitle.textContent = `${(ext ? ext.slice(1) : record.type.split('/')[1] || 'AUDIO').toUpperCase()} • ${formatBytes(record.size)}`;
-    dom.btnAudioSpeed.textContent = '1.0x'; dom.btnAudioLoop.setAttribute('aria-pressed', 'false');
+    dom.btnAudioSpeed.textContent = '1.0x'; dom.btnAudioLoop.style.opacity = '0.5';
     dom.audioScrubber.value = '0'; updateScrubberFill(dom.audioScrubber); dom.audioElapsed.textContent = '00:00'; dom.audioRemaining.textContent = '-00:00';
     
-    resizeAudioCanvas();
     const audio = dom.viewerAudio; audio.src = objectUrl; audio.loop = false; audio.playbackRate = 1.0;
     ensureWebAudioGraphConnected(); drawIdleAudioVisualizer();
     audio.play().catch(() => { syncAudioPlayState(); });
   }
 
-  function resizeAudioCanvas() {
-    const canvas = dom.audioVisualizer;
-    const shell = canvas.parentElement;
-    canvas.width = shell.clientWidth * (window.devicePixelRatio || 1);
-    canvas.height = shell.clientHeight * (window.devicePixelRatio || 1);
+  function setupAudioVisualizerResize() {
+    const ro = new ResizeObserver(entries => {
+      for (let entry of entries) {
+         const canvas = dom.audioVisualizer;
+         if(!canvas) return;
+         canvas.width = entry.contentRect.width * (window.devicePixelRatio || 1);
+         canvas.height = entry.contentRect.height * (window.devicePixelRatio || 1);
+         if(dom.viewerAudio.paused || !state.isViewerOpen) drawIdleAudioVisualizer();
+      }
+    });
+    ro.observe(dom.audioVisualizer.parentElement);
   }
 
   function ensureWebAudioGraphConnected() {
@@ -589,9 +680,11 @@
   }
 
   function drawIdleAudioVisualizer() {
-    const canvas = dom.audioVisualizer, ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+    const canvas = dom.audioVisualizer, ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-    const barCount = 32, gap = 6 * (window.devicePixelRatio||1), barW = (w - gap*(barCount-1))/barCount;
+    const barCount = 36, gap = 4 * (window.devicePixelRatio || 1), barW = (w - gap*(barCount-1))/barCount;
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-focus').trim();
     for (let i = 0; i < barCount; i++) {
         ctx.beginPath();
@@ -603,7 +696,7 @@
 
   function startAudioVisualizerLoop() {
     if (state.audio.rafId) cancelAnimationFrame(state.audio.rafId);
-    const canvas = dom.audioVisualizer, ctx = canvas.getContext('2d'), barCount = 32;
+    const canvas = dom.audioVisualizer, ctx = canvas.getContext('2d'), barCount = 36;
     const renderFrame = (timestamp) => {
       if (dom.viewerAudio.paused || dom.viewerAudio.ended || !state.isViewerOpen) { state.audio.rafId = null; drawIdleAudioVisualizer(); return; }
       const w = canvas.width, h = canvas.height; ctx.clearRect(0, 0, w, h);
@@ -614,7 +707,7 @@
         for (let i = 0; i < state.audio.freqData.length; i++) { if (state.audio.freqData[i] > 2) { hasSignal = true; break; } }
       }
 
-      const gap = 6 * (window.devicePixelRatio||1), barW = (w - gap*(barCount-1))/barCount;
+      const gap = 4 * (window.devicePixelRatio || 1), barW = (w - gap*(barCount-1))/barCount;
       const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
       
       for (let i = 0; i < barCount; i++) {
@@ -643,6 +736,7 @@
 
   function setupAudioPlayerControls() {
     const audio = dom.viewerAudio;
+    setupAudioVisualizerResize();
     audio.addEventListener('play', () => { if (state.audio.audioCtx && state.audio.audioCtx.state === 'suspended') state.audio.audioCtx.resume().catch(()=>{}); syncAudioPlayState(); startAudioVisualizerLoop(); });
     audio.addEventListener('pause', () => { syncAudioPlayState(); drawIdleAudioVisualizer(); });
     audio.addEventListener('ended', () => { syncAudioPlayState(); drawIdleAudioVisualizer(); });
@@ -652,7 +746,6 @@
       if (!state.audio.isScrubbing && dur > 0) { dom.audioScrubber.value = String(Math.round((cur / dur) * 1000)); updateScrubberFill(dom.audioScrubber); }
       dom.audioElapsed.textContent = formatMediaTime(cur, false); dom.audioRemaining.textContent = formatMediaTime(Math.max(0, dur - cur), true);
     });
-    window.addEventListener('resize', resizeAudioCanvas);
 
     dom.btnAudioPlay.addEventListener('click', () => { if (state.audio.audioCtx && state.audio.audioCtx.state === 'suspended') state.audio.audioCtx.resume().catch(()=>{}); audio.paused ? audio.play().catch(()=>{}) : audio.pause(); });
     dom.btnAudioRw.addEventListener('click', () => { audio.currentTime = Math.max(0, (audio.currentTime || 0) - 10); });
@@ -663,7 +756,7 @@
     dom.btnAudioSpeed.addEventListener('click', () => { state.audio.speedIndex = (state.audio.speedIndex + 1) % PLAYBACK_SPEEDS.length; const rate = PLAYBACK_SPEEDS[state.audio.speedIndex]; audio.playbackRate = rate; dom.btnAudioSpeed.textContent = `${rate.toFixed(rate % 1 === 0 ? 1 : 2).replace(/0$/, '')}x`; });
   }
 
-  /* PDF VIEWER (Continuous Scroll) */
+  /* PDF VIEWER */
   async function launchPdfViewer(objectUrl) {
     dom.stagePdf.classList.remove('hidden'); state.pdf.zoomScale = 1.0; state.pdf.currentPage = 1;
     dom.pdfZoomLabel.textContent = '100%'; dom.pdfPageIndicator.textContent = 'Loading...'; dom.pdfPagesList.innerHTML = '';
@@ -771,10 +864,8 @@
   function closeViewer(fromPopstate = false) {
     if (!state.isViewerOpen) return;
     
-    // Revoke any thumbnail urls in queue to save RAM
-    if(state.queue) {
-       for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } }
-    }
+    state.isClosingViewer = true; // Flags race condition for async play()
+    if(state.queue) { for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } } }
     state.queue = [];
     
     releaseActiveMediaResources();
@@ -787,7 +878,7 @@
   function closeConfirmClearModal(fromPopstate = false) { if (!state.isConfirmOpen) return; dom.confirmModal.classList.add('hidden'); state.isConfirmOpen = false; if (!fromPopstate && window.location.hash === '#confirm-clear') { state.suppressPopstate = true; history.back(); } }
 
   function setupHistoryRouter() {
-    if (!history.state) history.replaceState({ view: 'home' }, '', window.location.pathname + window.location.search);
+    if (!history.state) history.replaceState({ view: 'home' }, '', window.location.pathname);
     window.addEventListener('popstate', () => {
       if (state.suppressPopstate) { state.suppressPopstate = false; return; }
       if (state.isRenameOpen) { closeRenameModal(true); return; }
@@ -860,8 +951,14 @@
   }
 
   async function bootstrapApp() {
-    setupHistoryRouter(); bindGlobalUiEvents(); setupSwipeGestures(); setupImageViewerGestures(); setupVideoPlayerControls(); setupAudioPlayerControls(); setupPdfViewerControls(); registerServiceWorkerAndShareListener();
+    initTheme(); setupHistoryRouter(); bindGlobalUiEvents(); setupSwipeGestures(); setupImageViewerGestures(); setupVideoPlayerControls(); setupAudioPlayerControls(); setupPdfViewerControls(); registerServiceWorkerAndShareListener();
     await initDatabase(); await loadAllHistoryRecords(); renderHistoryList();
+    
+    // Purge the messy share query from the URL without triggering a buggy popstate backout
+    if (window.location.search.includes('shared=')) {
+        history.replaceState(history.state, '', window.location.pathname + window.location.hash);
+    }
+    
     await consumeSharedQueue();
     if (new URLSearchParams(window.location.search).get('action') === 'open') { history.replaceState({ view: 'home' }, '', window.location.pathname); setTimeout(() => dom.fileInput.click(), 150); }
   }
