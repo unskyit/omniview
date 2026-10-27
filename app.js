@@ -11,7 +11,7 @@
   'use strict';
 
   const DB_NAME = 'OmniviewDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 3; // CRITICAL FIX: Synced with sw.js
   const STORE_SHARED = 'shared_queue';
   const STORE_HISTORY = 'recent_history';
   const PLAYBACK_SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -32,7 +32,7 @@
     btnThemeToggle: document.getElementById('btn-theme-toggle'),
     fileInput: document.getElementById('file-input'),
     btnDemoMedia: document.getElementById('btn-demo-media'),
-    btnInstallPwa: document.getElementById('btn-install-pwa'), // DOM reference linked correctly
+    btnInstallPwa: document.getElementById('btn-install-pwa'),
     btnEmptyOpen: document.getElementById('btn-empty-open'),
     fabOpenFile: document.getElementById('fab-open-file'),
     filterChips: document.getElementById('filter-chips'),
@@ -922,25 +922,21 @@
       });
     }
     
-    // Hide install button immediately if app is already a standalone PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
         dom.btnInstallPwa.classList.add('hidden');
     }
 
-    // Capture install prompt if eligible
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         state.deferredInstallPrompt = e;
         dom.btnInstallPwa.classList.remove('hidden');
     });
 
-    // Ensure it hides permanently upon successful install
     window.addEventListener('appinstalled', () => {
         dom.btnInstallPwa.classList.add('hidden');
         state.deferredInstallPrompt = null;
     });
 
-    // Handle Manual PWA Installation
     dom.btnInstallPwa.addEventListener('click', async () => {
         if (!state.deferredInstallPrompt) return;
         state.deferredInstallPrompt.prompt();

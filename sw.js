@@ -5,10 +5,9 @@
  * - Handles MULTIPLE queued file parsing directly to IndexedDB
  */
 
-// BUMPED CACHE VERSION: Forces the browser to clear old files and cache the new app.js, index.html, and styles.css
-const CACHE_NAME = 'simply-viewer-cache-v2.1.0';
+const CACHE_NAME = 'simply-viewer-cache-v3.0.0';
 const DB_NAME = 'OmniviewDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3; // CRITICAL FIX: Synced with app.js
 const STORE_SHARED = 'shared_queue';
 const STORE_HISTORY = 'recent_history';
 

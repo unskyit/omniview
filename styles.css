@@ -218,11 +218,21 @@ html, body {
 .pdf-page-canvas { display: block; width: 100%; height: 100%; }
 .pdf-page-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #9CA3AF; font-size: 0.8rem; font-weight: 600; }
 
-/* MULTIPLE FILE GALLERY STRIP */
-.thumbnail-strip { position: absolute; bottom: calc(20px + var(--safe-bottom)); left: 0; right: 0; display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto; scroll-snap-type: x mandatory; z-index: 70; transition: transform 0.3s var(--ease-out-expo), opacity 0.3s ease; }
-.thumbnail-strip.chrome-hidden { transform: translateY(150%); opacity: 0; pointer-events: none; }
-.thumb-box { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; overflow: hidden; cursor: pointer; border: 2px solid transparent; background-color: var(--surface-1); display: flex; align-items: center; justify-content: center; scroll-snap-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-secondary); transition: transform 0.2s, border-color 0.2s; position: relative; }
-.thumb-box.active { border-color: var(--accent-primary); transform: scale(1.1); }
+/* MULTIPLE FILE GALLERY STRIP (Upgraded to bottom-center Native look) */
+.thumbnail-strip { 
+  position: absolute; bottom: calc(24px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; padding: 8px 12px; overflow-x: auto; scroll-snap-type: x mandatory; 
+  z-index: 70; background: var(--surface-hud); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle); border-radius: 20px; max-width: 90vw; 
+  transition: transform 0.3s var(--ease-out-expo), opacity 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+}
+.thumbnail-strip.chrome-hidden { transform: translate(-50%, 150%); opacity: 0; pointer-events: none; }
+.thumb-box { 
+  width: 50px; height: 50px; border-radius: 12px; flex-shrink: 0; overflow: hidden; cursor: pointer; 
+  border: 2px solid transparent; background-color: var(--surface-1); display: flex; align-items: center; justify-content: center; 
+  scroll-snap-align: center; color: var(--text-secondary); transition: transform 0.2s, border-color 0.2s; position: relative; 
+}
+.thumb-box.active { border-color: var(--accent-primary); transform: scale(1.08); }
 .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
 .thumb-video-badge { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; padding: 2px; border-radius: 4px; }
 .thumb-audio-visualizer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--surface-2), var(--bg-primary)); color: var(--text-secondary); }
