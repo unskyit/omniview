@@ -28,16 +28,22 @@
   <div id="home-view" class="app-shell">
     <header class="app-header">
       <div class="brand-group">
-        <svg class="brand-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="120" height="120" rx="28" fill="var(--accent-primary)"/>
-          <path d="M45 38L82 60L45 82V38Z" fill="var(--bg-primary)" stroke="var(--bg-primary)" stroke-width="8" stroke-linejoin="round"/>
-        </svg>
+        <img class="brand-logo" src="./assets/logo.svg" alt="Simply Viewer Logo">
         <div class="brand-titles">
           <h1 class="brand-name">Simply Viewer</h1>
           <span class="brand-subtitle">Universal Media Engine</span>
         </div>
       </div>
       <div class="header-actions">
+        <!-- PWA Install Button -->
+        <button id="btn-install-pwa" type="button" class="btn btn-secondary hidden" aria-label="Install App" title="Install App">
+          <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="btn-label">Install</span>
+        </button>
         <button id="btn-theme-toggle" type="button" class="icon-btn-sm" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
           <svg class="icon-sm theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>

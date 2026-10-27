@@ -86,7 +86,7 @@ html, body {
 .app-shell { display: flex; flex-direction: column; width: 100%; height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
 .app-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background-color: var(--surface-1); border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; transition: background-color 0.25s ease; }
 .brand-group { display: flex; align-items: center; gap: 12px; }
-.brand-logo { width: 36px; height: 36px; flex-shrink: 0; }
+.brand-logo { width: 36px; height: 36px; flex-shrink: 0; object-fit: contain; }
 .brand-titles { display: flex; flex-direction: column; }
 .brand-name { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
 .brand-subtitle { font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); }
@@ -225,6 +225,8 @@ html, body {
 .thumb-box.active { border-color: var(--accent-primary); transform: scale(1.1); }
 .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
 .thumb-video-badge { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; padding: 2px; border-radius: 4px; }
+.thumb-audio-visualizer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--surface-2), var(--bg-primary)); color: var(--text-secondary); }
+.thumb-audio-visualizer svg { width: 24px; height: 24px; }
 
 /* MODALS & TOASTS */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 90; animation: fadeIn 0.2s ease forwards; }

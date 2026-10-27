@@ -4,7 +4,7 @@
  * - Race-Condition safe Video playback
  * - Canvas frame extraction for Video Thumbnails
  * - Native swipe gestures & dynamic ResizeObserver
- * - Restored PWA Install Button DOM reference
+ * - Integrated PDF Web Worker Support & PWA Lifecycle Handlers
  */
 
 (function () {
@@ -32,7 +32,7 @@
     btnThemeToggle: document.getElementById('btn-theme-toggle'),
     fileInput: document.getElementById('file-input'),
     btnDemoMedia: document.getElementById('btn-demo-media'),
-    btnInstallPwa: document.getElementById('btn-install-pwa'), // <-- FIXED: Restored DOM reference
+    btnInstallPwa: document.getElementById('btn-install-pwa'), // DOM reference linked correctly
     btnEmptyOpen: document.getElementById('btn-empty-open'),
     fabOpenFile: document.getElementById('fab-open-file'),
     filterChips: document.getElementById('filter-chips'),
@@ -402,6 +402,8 @@
                   box.innerHTML = `<img src="${url}" /><div class="thumb-video-badge"><svg class="icon-xs" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>`;
               }
           });
+       } else if (record.category === 'audio') {
+          box.innerHTML = `<div class="thumb-audio-visualizer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="4" height="8" rx="1"></rect><rect x="10" y="4" width="4" height="14" rx="1"></rect><rect x="16" y="8" width="4" height="10" rx="1"></rect></svg></div>`;
        } else {
           box.innerHTML = getCategoryIconSvg(record.category);
        }
@@ -759,6 +761,10 @@
     dom.stagePdf.classList.remove('hidden'); state.pdf.zoomScale = 1.0; state.pdf.currentPage = 1;
     dom.pdfZoomLabel.textContent = '100%'; dom.pdfPageIndicator.textContent = 'Loading...'; dom.pdfPagesList.innerHTML = '';
     if (!window.pdfjsLib) { showToast('PDF engine unavailable'); return; }
+    
+    // EXTREMELY IMPORTANT OPTIMIZATION: Ensure Web Worker is configured correctly to prevent main-thread blocking[cite: 8]
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
+    
     try {
       state.pdf.loadingTask = window.pdfjsLib.getDocument(objectUrl);
       state.pdf.doc = await state.pdf.loadingTask.promise;
@@ -915,8 +921,36 @@
         }).catch(()=>{});
       });
     }
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.deferredInstallPrompt = e; dom.btnInstallPwa.classList.remove('hidden'); });
-    dom.btnInstallPwa.addEventListener('click', async () => { if (!state.deferredInstallPrompt) return; state.deferredInstallPrompt.prompt(); const { outcome } = await state.deferredInstallPrompt.userChoice; if (outcome === 'accepted') { dom.btnInstallPwa.classList.add('hidden'); showToast('App installed!'); } state.deferredInstallPrompt = null; });
+    
+    // Hide install button immediately if app is already a standalone PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        dom.btnInstallPwa.classList.add('hidden');
+    }
+
+    // Capture install prompt if eligible
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        state.deferredInstallPrompt = e;
+        dom.btnInstallPwa.classList.remove('hidden');
+    });
+
+    // Ensure it hides permanently upon successful install
+    window.addEventListener('appinstalled', () => {
+        dom.btnInstallPwa.classList.add('hidden');
+        state.deferredInstallPrompt = null;
+    });
+
+    // Handle Manual PWA Installation
+    dom.btnInstallPwa.addEventListener('click', async () => {
+        if (!state.deferredInstallPrompt) return;
+        state.deferredInstallPrompt.prompt();
+        const { outcome } = await state.deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+            dom.btnInstallPwa.classList.add('hidden');
+            showToast('App installed successfully!');
+        }
+        state.deferredInstallPrompt = null;
+    });
   }
 
   function bindGlobalUiEvents() {
