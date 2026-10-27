@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F9FAFB">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Omniview">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Simply Viewer">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="Omniview — High-performance AMOLED universal media viewer, audio visualizer, continuous PDF reader, and native saver.">
-  <title>Omniview — Simply Viewer</title>
+  <meta name="description" content="Simply Viewer — Modern, high-performance universal media engine with an optimized gallery queue, continuous PDF reader, and adaptive theming.">
+  <title>Simply Viewer</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
   <link rel="apple-touch-icon" href="./assets/logo.svg">
@@ -24,27 +25,32 @@
     accept="image/*,video/*,audio/*,application/pdf,.jpg,.jpeg,.png,.webp,.gif,.svg,.mp4,.webm,.mkv,.mov,.mp3,.wav,.ogg,.m4a,.flac,.pdf"
   >
 
+  <!-- HOME VIEW -->
   <div id="home-view" class="app-shell">
     <header class="app-header">
       <div class="brand-group">
-        <img src="./assets/logo.svg" alt="Omniview Logo" class="brand-logo" width="38" height="38">
+        <svg class="brand-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="22" fill="var(--text-primary)"/>
+          <path d="M30 35C30 32.2386 32.2386 30 35 30H65C67.7614 30 70 32.2386 70 35V65C70 67.7614 67.7614 70 65 70H35C32.2386 70 30 67.7614 30 65V35Z" stroke="var(--bg-primary)" stroke-width="6"/>
+          <circle cx="50" cy="50" r="10" fill="var(--bg-primary)"/>
+        </svg>
         <div class="brand-titles">
-          <h1 class="brand-name">Omniview</h1>
-          <span class="brand-subtitle">Simply Viewer</span>
+          <h1 class="brand-name">Simply Viewer</h1>
+          <span class="brand-subtitle">Universal Media Engine</span>
         </div>
       </div>
       <div class="header-actions">
-        <button id="btn-demo-media" type="button" class="btn btn-ghost" title="Generate Sample Media to Test Viewers">
+        <button id="btn-demo-media" type="button" class="btn btn-ghost" title="Load Sample Media">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span class="btn-label">Sample Media</span>
+          <span class="btn-label">Samples</span>
         </button>
-        <button id="btn-install-pwa" type="button" class="btn btn-accent hidden" aria-label="Install PWA">
+        <button id="btn-install-pwa" type="button" class="btn btn-accent hidden" aria-label="Install App">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Install App</span>
+          <span>Install</span>
         </button>
       </div>
     </header>
@@ -63,7 +69,7 @@
           <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Clear All</span>
+          <span>Clear</span>
         </button>
       </div>
     </section>
@@ -72,13 +78,14 @@
       <div id="empty-state" class="empty-state">
         <div class="empty-illustration">
           <svg viewBox="0 0 96 96" width="72" height="72" aria-hidden="true">
-            <circle cx="48" cy="48" r="36" fill="#0B0C10" stroke="#3A86FF" stroke-width="4"/>
-            <polygon points="42,34 42,62 64,48" fill="#4EA8DE"/>
+            <rect x="18" y="18" width="60" height="60" rx="12" fill="var(--surface-2)" stroke="var(--text-muted)" stroke-width="4"/>
+            <path d="M18 54L38 34L60 56L70 46L78 54" fill="none" stroke="var(--text-muted)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="60" cy="36" r="6" fill="var(--text-muted)"/>
           </svg>
         </div>
-        <h2 class="empty-title">No Media Opened Yet</h2>
+        <h2 class="empty-title">Clean & Ready</h2>
         <p class="empty-desc">
-          Open media directly from your device or share multiple files simultaneously to build a queue.
+          Open media directly from your device or share multiple files simultaneously to build a viewing queue.
         </p>
         <div class="empty-cta-row">
           <button id="btn-empty-open" type="button" class="btn btn-primary">
@@ -86,9 +93,6 @@
               <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
             <span>Select Media</span>
-          </button>
-          <button id="btn-empty-samples" type="button" class="btn btn-secondary">
-            <span>Demo Files</span>
           </button>
         </div>
       </div>
@@ -102,6 +106,7 @@
     </button>
   </div>
 
+  <!-- VIEWER SHEET -->
   <section id="viewer-view" class="viewer-sheet hidden" aria-label="Media Viewer" aria-hidden="true">
     <header id="viewer-topbar" class="viewer-topbar">
       <button id="btn-viewer-back" type="button" class="icon-btn" aria-label="Back to Home" title="Back">
@@ -127,8 +132,9 @@
       </div>
     </header>
 
+    <!-- IMAGE STAGE -->
     <div id="stage-image" class="viewer-stage hidden">
-      <div id="image-touch-surface" class="image-touch-surface">
+      <div id="image-touch-surface" class="image-touch-surface swipe-target">
         <img id="viewer-img" class="viewer-img" alt="Active Media" draggable="false">
       </div>
       <div id="image-hud" class="floating-hud">
@@ -140,7 +146,8 @@
       </div>
     </div>
 
-    <div id="stage-video" class="viewer-stage hidden">
+    <!-- VIDEO STAGE -->
+    <div id="stage-video" class="viewer-stage hidden swipe-target">
       <div id="video-container" class="video-container">
         <video id="viewer-video" class="viewer-video" playsinline preload="metadata"></video>
         <div id="video-double-tap-indicator" class="video-double-tap-indicator hidden">
@@ -192,21 +199,23 @@
       </div>
     </div>
 
-    <div id="stage-audio" class="viewer-stage hidden">
+    <!-- AUDIO STAGE (Modernized) -->
+    <div id="stage-audio" class="viewer-stage hidden swipe-target">
       <audio id="viewer-audio" preload="metadata" crossorigin="anonymous"></audio>
       <div class="audio-card">
-        <div class="vinyl-wrapper">
-          <div id="audio-vinyl" class="vinyl-disc">
-            <div class="vinyl-grooves"></div>
-            <div class="vinyl-label"><div class="vinyl-spindle"></div></div>
-          </div>
+        <div class="audio-cover-art">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
         </div>
         <div class="audio-track-info">
           <h2 id="audio-title" class="audio-title">Audio Track</h2>
           <p id="audio-subtitle" class="audio-subtitle">MP3 • 0.0 MB</p>
         </div>
         <div class="visualizer-shell">
-          <canvas id="audio-visualizer" width="480" height="120"></canvas>
+          <canvas id="audio-visualizer"></canvas>
         </div>
         <div class="audio-timeline-group">
           <input type="range" id="audio-scrubber" class="media-scrubber" min="0" max="1000" value="0" step="1" aria-label="Audio Timeline">
@@ -222,10 +231,9 @@
               <path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M21 13v2a4 4 0 01-4 4H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Loop</span>
           </button>
           <button id="btn-audio-rw" type="button" class="audio-skip-btn" aria-label="Rewind 10 seconds">-10s</button>
-          <button id="btn-audio-play" type="button" class="audio-play-fab" aria-label="Play or Pause Audio">
+          <button id="btn-audio-play" type="button" class="audio-play-hero" aria-label="Play or Pause Audio">
             <svg id="icon-audio-play" class="icon-lg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
             <svg id="icon-audio-pause" class="icon-lg hidden" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></svg>
           </button>
@@ -235,7 +243,8 @@
       </div>
     </div>
 
-    <div id="stage-pdf" class="viewer-stage hidden">
+    <!-- PDF STAGE -->
+    <div id="stage-pdf" class="viewer-stage hidden swipe-target">
       <div id="pdf-scroll-container" class="pdf-scroll-container">
         <div id="pdf-pages-list" class="pdf-pages-list"></div>
       </div>
@@ -247,8 +256,12 @@
         <button id="btn-pdf-zoom-in" type="button" class="hud-btn" aria-label="PDF Zoom In">+</button>
       </div>
     </div>
+
+    <!-- BOTTOM THUMBNAIL STRIP (Gallery Queue) -->
+    <div id="thumbnail-strip" class="thumbnail-strip hidden"></div>
   </section>
 
+  <!-- RENAME MODAL -->
   <div id="rename-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="rename-modal-title">
     <div class="modal-sheet">
       <h2 id="rename-modal-title" class="modal-title">Rename Media File</h2>
@@ -266,10 +279,11 @@
     </div>
   </div>
 
+  <!-- CLEAR ALL MODAL -->
   <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
     <div class="modal-sheet">
       <h2 id="confirm-modal-title" class="modal-title">Clear Recent History?</h2>
-      <p class="modal-subtitle">This removes all cached media items from Omniview's local storage. Original device files remain untouched.</p>
+      <p class="modal-subtitle">This removes all cached media items from the local storage. Original device files remain untouched.</p>
       <div class="modal-actions">
         <button id="btn-confirm-cancel" type="button" class="btn btn-ghost">Cancel</button>
         <button id="btn-confirm-accept" type="button" class="btn btn-danger">Clear All</button>

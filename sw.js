@@ -1,11 +1,11 @@
 /**
- * Omniview Service Worker (sw.js)
+ * Simply Viewer Service Worker (sw.js)
  * - Offline-first App Shell caching
  * - Android Web Share Target API POST interception
- * - Now handles MULTIPLE queued file parsing directly to IndexedDB
+ * - Handles MULTIPLE queued file parsing directly to IndexedDB
  */
 
-const CACHE_NAME = 'omniview-cache-v1.0.1';
+const CACHE_NAME = 'simply-viewer-cache-v1.0.0';
 const DB_NAME = 'OmniviewDB';
 const DB_VERSION = 1;
 const STORE_SHARED = 'shared_queue';
@@ -24,7 +24,7 @@ const APP_SHELL_ASSETS = [
   './vendor/pdf.worker.min.js'
 ];
 
-function openOmniviewDB() {
+function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (event) => {
@@ -44,7 +44,7 @@ function openOmniviewDB() {
 }
 
 async function enqueueSharedFile(file, meta = {}) {
-  const db = await openOmniviewDB();
+  const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_SHARED, 'readwrite');
     const store = tx.objectStore(STORE_SHARED);
@@ -81,10 +81,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  
   if (event.request.method === 'POST' && (url.pathname.endsWith('/share-target') || url.pathname === '/share-target')) {
     event.respondWith(handleShareTargetPost(event));
     return;
   }
+  
   if (event.request.method === 'GET') {
     event.respondWith(
       caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
@@ -112,7 +114,6 @@ async function handleShareTargetPost(event) {
     
     let processedCount = 0;
 
-    // Process all files for Queue support
     if (mediaFiles && mediaFiles.length > 0) {
       for (const file of mediaFiles) {
         if (file instanceof File || file instanceof Blob) {
