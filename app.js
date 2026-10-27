@@ -1,7 +1,6 @@
 /**
  * Simply Viewer Core Application Engine (app.js)
- * - Robust Error handling for closing loops to guarantee Back button functions.
- * - Native PDF Pinch to Zoom direct interception to block browser scroll overriding.
+ * - Restored DOM mappings to fix initialization crash
  */
 
 (function () {
@@ -30,6 +29,7 @@
     fileInput: document.getElementById('file-input'),
     btnInstallPwa: document.getElementById('btn-install-pwa'),
     
+    // Home & History Views
     btnHeaderOpen: document.getElementById('btn-header-open'),
     emptyState: document.getElementById('empty-state'),
     btnOpenHistory: document.getElementById('btn-open-history'),
@@ -40,6 +40,7 @@
     btnClearAll: document.getElementById('btn-clear-all'),
     historyList: document.getElementById('history-list'),
 
+    // Viewer Shell
     viewerView: document.getElementById('viewer-view'),
     viewerTopbar: document.getElementById('viewer-topbar'),
     btnViewerBack: document.getElementById('btn-viewer-back'),
@@ -48,11 +49,13 @@
     btnSaveFile: document.getElementById('btn-save-file'),
     thumbnailStrip: document.getElementById('thumbnail-strip'),
 
+    // Media Stages
     stageImage: document.getElementById('stage-image'),
     stageVideo: document.getElementById('stage-video'),
     stageAudio: document.getElementById('stage-audio'),
     stagePdf: document.getElementById('stage-pdf'),
 
+    // Image Controls
     imageTouchSurface: document.getElementById('image-touch-surface'),
     viewerImg: document.getElementById('viewer-img'),
     imageHud: document.getElementById('image-hud'),
@@ -61,6 +64,7 @@
     btnImgZoomIn: document.getElementById('btn-img-zoom-in'),
     btnImgZoomReset: document.getElementById('btn-img-zoom-reset'),
 
+    // Video Controls
     videoContainer: document.getElementById('video-container'),
     viewerVideo: document.getElementById('viewer-video'),
     videoOverlay: document.getElementById('video-overlay'),
@@ -78,6 +82,7 @@
     btnVideoSpeed: document.getElementById('btn-video-speed'),
     btnVideoFullscreen: document.getElementById('btn-video-fullscreen'),
 
+    // Audio Controls
     viewerAudio: document.getElementById('viewer-audio'),
     audioTitle: document.getElementById('audio-title'),
     audioSubtitle: document.getElementById('audio-subtitle'),
@@ -93,6 +98,7 @@
     btnAudioFf: document.getElementById('btn-audio-ff'),
     btnAudioSpeed: document.getElementById('btn-audio-speed'),
 
+    // PDF Controls
     pdfScrollContainer: document.getElementById('pdf-scroll-container'),
     pdfPagesList: document.getElementById('pdf-pages-list'),
     pdfHud: document.getElementById('pdf-hud'),
@@ -101,11 +107,18 @@
     pdfZoomLabel: document.getElementById('pdf-zoom-label'),
     btnPdfZoomIn: document.getElementById('btn-pdf-zoom-in'),
 
+    // Modals
     renameModal: document.getElementById('rename-modal'),
     renameForm: document.getElementById('rename-form'),
     renameInput: document.getElementById('rename-input'),
     renameExtBadge: document.getElementById('rename-ext-badge'),
     btnRenameCancel: document.getElementById('btn-rename-cancel'),
+    
+    // RESTORED: These were causing the initialization crash!
+    confirmModal: document.getElementById('confirm-modal'),
+    btnConfirmCancel: document.getElementById('btn-confirm-cancel'),
+    btnConfirmAccept: document.getElementById('btn-confirm-accept'),
+    
     toastContainer: document.getElementById('toast-container')
   };
 
@@ -666,7 +679,7 @@
     dom.btnAudioSpeed.addEventListener('click', () => { state.audio.speedIndex = (state.audio.speedIndex + 1) % PLAYBACK_SPEEDS.length; const rate = PLAYBACK_SPEEDS[state.audio.speedIndex]; audio.playbackRate = rate; dom.btnAudioSpeed.textContent = `${rate.toFixed(rate % 1 === 0 ? 1 : 2).replace(/0$/, '')}x`; });
   }
 
-  /* PDF VIEWER (Robust 13MB Worker + Native Intercept Pinch Zoom) */
+  /* PDF VIEWER (Robust 13MB Worker + Native Pinch Interception) */
   async function launchPdfViewer(objectUrl) {
     dom.stagePdf.classList.remove('hidden'); state.pdf.zoomScale = 1.0; state.pdf.currentPage = 1;
     dom.pdfZoomLabel.textContent = '100%'; dom.pdfPageIndicator.textContent = 'Loading...'; dom.pdfPagesList.innerHTML = ''; dom.pdfPagesList.style.transform = 'none';
@@ -736,7 +749,7 @@
 
     dom.stagePdf.addEventListener('click', (e) => { if (!e.target.closest('.floating-hud')) toggleChromeVisibility(); });
 
-    // Native PDF Pinch Zoom intercepts on the scroll container to block native scrolling
+    // CRITICAL FIX: Intercept touch directly on the scroll container and stop native scroll
     let pdfPinchStart = 0; 
     let pdfPinchInitialScale = 1;
     let activePinchScale = 1;
@@ -749,10 +762,9 @@
         }
     }, {passive: true});
     
-    // Critical: passive: false allows e.preventDefault() to stop native scroll interference
     dom.pdfScrollContainer.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2 && pdfPinchStart > 0) {
-            e.preventDefault(); 
+            e.preventDefault(); // Blocks background scroll
             const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             activePinchScale = dist / pdfPinchStart;
             dom.pdfPagesList.style.transform = `scale(${Math.min(3.0, Math.max(0.5, activePinchScale))})`;
@@ -765,7 +777,7 @@
                 const newScale = pdfPinchInitialScale * activePinchScale;
                 state.pdf.zoomScale = Math.min(3.0, Math.max(0.5, +(newScale).toFixed(2)));
                 dom.pdfZoomLabel.textContent = `${Math.round(state.pdf.zoomScale * 100)}%`;
-                buildPdfPageSlots(); // Re-render crispy text at new scale
+                buildPdfPageSlots();
             }
             pdfPinchStart = 0; 
             activePinchScale = 1;
@@ -834,7 +846,7 @@
     if (!state.isViewerOpen) return;
     state.isClosingViewer = true; 
     
-    // Wrapped in strict try/catch so failure doesn't freeze the back button UI
+    // Wrapped in strict try/catch so failure doesn't freeze the UI
     try {
         if(state.queue) { for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } } }
         state.queue = []; 

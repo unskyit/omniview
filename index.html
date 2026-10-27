@@ -237,6 +237,18 @@
     </div>
   </div>
 
+  <!-- CLEAR ALL MODAL (RESTORED TO FIX CRASH) -->
+  <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <h2 class="modal-title">Clear Recent History?</h2>
+      <p class="modal-subtitle">This removes all cached media items from the local storage. Original device files remain untouched.</p>
+      <div class="modal-actions">
+        <button id="btn-confirm-cancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="btn-confirm-accept" type="button" class="btn btn-danger">Clear All</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script src="./vendor/pdf.min.js"></script>
   <script src="./app.js"></script>
