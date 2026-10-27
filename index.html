@@ -1,459 +1,368 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-accent="blue">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="MultiView — Native-grade AMOLED local media player and universal file opener.">
-  <title>MultiView</title>
-
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/icons/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png">
-
-  <link rel="stylesheet" href="./css/reset.css">
-  <link rel="stylesheet" href="./css/variables.css">
-  <link rel="stylesheet" href="./css/themes.css">
-  <link rel="stylesheet" href="./css/layout.css">
-  <link rel="stylesheet" href="./css/navigation.css">
-  <link rel="stylesheet" href="./css/components.css">
-  <link rel="stylesheet" href="./css/viewers.css">
-  <link rel="stylesheet" href="./css/dialogs.css">
-  <link rel="stylesheet" href="./css/responsive.css">
+  <meta name="apple-mobile-web-app-title" content="Omniview">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Omniview — High-performance AMOLED universal media viewer, audio visualizer, continuous PDF reader, and native saver.">
+  <title>Omniview — Universal Media Viewer</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="apple-touch-icon" href="./assets/logo.svg">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <input type="file" id="global-file-input" hidden multiple>
+  <!-- Hidden File Input for Local Media Selection -->
+  <input
+    type="file"
+    id="file-input"
+    class="visually-hidden"
+    accept="image/*,video/*,audio/*,application/pdf,.jpg,.jpeg,.png,.webp,.gif,.svg,.mp4,.webm,.mkv,.mov,.mp3,.wav,.ogg,.m4a,.flac,.pdf"
+  >
 
-  <div class="app-shell">
-    <!-- Native Mobile Top App Bar with Hamburger Menu Trigger -->
-    <header class="app-header" role="banner">
+  <!-- ==================== HOME VIEW ==================== -->
+  <div id="home-view" class="app-shell">
+    <header class="app-header">
       <div class="brand-group">
-        <button type="button" id="btn-drawer-toggle" class="btn-icon" aria-label="Open navigation drawer" aria-expanded="false">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="16" y2="18"/>
-          </svg>
-        </button>
-        <img src="./assets/icons/icon.svg" alt="MultiView Icon" class="brand-logo" width="32" height="32">
-        <div class="brand-text-wrap">
-          <span class="brand-title">MultiView</span>
-          <span class="brand-badge">AMOLED</span>
+        <img src="./assets/logo.svg" alt="Omniview Logo" class="brand-logo" width="38" height="38">
+        <div class="brand-titles">
+          <h1 class="brand-name">Omniview</h1>
+          <span class="brand-subtitle">Universal Media Engine</span>
         </div>
       </div>
 
       <div class="header-actions">
-        <button type="button" id="btn-install-pwa" class="btn btn-secondary" aria-label="Install MultiView App">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        <button id="btn-demo-media" type="button" class="btn btn-ghost" title="Generate Sample Media to Test Viewers">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span class="btn-label-hide-mobile">Install</span>
+          <span class="btn-label">Sample Media</span>
         </button>
 
-        <button type="button" class="btn btn-primary" data-pick-accept="" aria-label="Open local file">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3l2.2 2.5H19.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/>
+        <button id="btn-install-pwa" type="button" class="btn btn-accent hidden" aria-label="Install PWA">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Open</span>
+          <span>Install App</span>
         </button>
 
-        <button type="button" id="btn-fullscreen-app" class="btn-icon" aria-label="Toggle immersive fullscreen" title="Fullscreen">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        <button id="btn-open-header" type="button" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </button>
-
-        <button type="button" id="btn-theme-toggle" class="btn-icon" aria-label="Switch theme" title="Toggle Theme">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
+          <span>Open Local File</span>
         </button>
       </div>
     </header>
 
-    <!-- Slide-Out Hamburger Navigation Drawer -->
-    <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
-    <nav id="app-nav-drawer" class="app-nav" role="navigation" aria-label="Primary navigation">
-      <div class="drawer-header">
-        <div class="brand-group">
-          <img src="./assets/icons/icon.svg" alt="MultiView" class="brand-logo" width="30" height="30">
-          <span class="brand-title">MultiView</span>
-        </div>
-        <button type="button" id="btn-drawer-close" class="btn-icon" aria-label="Close navigation drawer">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+    <!-- Category Filter Chips & Toolbar -->
+    <section class="controls-strip" aria-label="Media Category Filters">
+      <div class="filter-chips" id="filter-chips" role="tablist">
+        <button type="button" class="chip active" data-filter="all" role="tab" aria-selected="true">All Files</button>
+        <button type="button" class="chip" data-filter="image" role="tab" aria-selected="false">Images</button>
+        <button type="button" class="chip" data-filter="video" role="tab" aria-selected="false">Videos</button>
+        <button type="button" class="chip" data-filter="audio" role="tab" aria-selected="false">Audio</button>
+        <button type="button" class="chip" data-filter="pdf" role="tab" aria-selected="false">PDFs</button>
       </div>
 
-      <div class="drawer-section-label">Workspace</div>
-      <button type="button" class="nav-item is-active" data-nav="home">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5z"/>
-        </svg>
-        <span>Home</span>
-      </button>
+      <div class="history-meta-bar">
+        <span id="history-count-label" class="history-count">0 items in local store</span>
+        <button id="btn-clear-all" type="button" class="btn-text-danger hidden" aria-label="Clear All History">
+          <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Clear All</span>
+        </button>
+      </div>
+    </section>
 
-      <button type="button" class="nav-item" data-nav="open">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3l2.2 2.5H19.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/>
-        </svg>
-        <span>Open Local File</span>
-      </button>
-
-      <div class="drawer-section-label">Media Viewers</div>
-      <button type="button" class="nav-item" data-nav="photos">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/>
-        </svg>
-        <span>Photos</span>
-      </button>
-
-      <button type="button" class="nav-item" data-nav="videos">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="2.5" y="4.5" width="19" height="15" rx="2.2"/><polygon points="10,8.8 16,12 10,15.2"/>
-        </svg>
-        <span>Videos</span>
-      </button>
-
-      <button type="button" class="nav-item" data-nav="audio">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>
-        </svg>
-        <span>Audio</span>
-      </button>
-
-      <button type="button" class="nav-item" data-nav="documents">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>
-        </svg>
-        <span>Documents</span>
-      </button>
-
-      <div class="drawer-section-label">Preferences</div>
-      <button type="button" class="nav-item" data-nav="settings">
-        <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        <span>Settings</span>
-      </button>
-    </nav>
-
-    <!-- Main Content Stage -->
-    <main class="app-main" role="main">
-      <!-- Active Multimedia Viewer Stage -->
-      <section id="active-viewer-workspace" class="card" style="display: none;" aria-label="Active Multimedia Viewer">
-        <div class="active-viewer-bar">
-          <div class="viewer-file-heading">
-            <h2 id="viewer-file-name" class="viewer-file-name">No file loaded</h2>
-            <p id="viewer-file-sub" class="viewer-file-sub">Select a file to begin</p>
-          </div>
-          <div class="header-actions">
-            <button
-              type="button"
-              id="btn-file-actions-toggle"
-              class="btn btn-secondary"
-              aria-haspopup="dialog"
-              aria-expanded="false"
-              aria-label="File actions sheet"
-            >
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/>
-              </svg>
-              <span>Actions</span>
-            </button>
-            <button type="button" id="btn-close-viewer" class="btn-icon" aria-label="Close active viewer" title="Close Viewer">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
+    <!-- Recent History List Container -->
+    <main class="history-stage" id="history-stage">
+      <!-- Empty State Illustration -->
+      <div id="empty-state" class="empty-state">
+        <div class="empty-illustration">
+          <svg viewBox="0 0 96 96" width="72" height="72" aria-hidden="true">
+            <circle cx="48" cy="48" r="36" fill="#0B0C10" stroke="#3A86FF" stroke-width="4"/>
+            <polygon points="42,34 42,62 64,48" fill="#4EA8DE"/>
+          </svg>
         </div>
-        <div id="viewer-stage" class="viewer-stage"></div>
-      </section>
-
-      <!-- Route 1: Home (Spacious, Uncluttered Native Feel) -->
-      <section class="view-section is-active" data-route="home" aria-labelledby="heading-home">
-        <div id="home-dropzone" class="hero-card">
-          <div class="hero-icon-ring">
-            <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3l2.2 2.5H19.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/>
+        <h2 class="empty-title">No Media Opened Yet</h2>
+        <p class="empty-desc">
+          Open a local photo, 4K video, lossless audio track, or PDF document—or share directly from any Android app via the system Share Sheet.
+        </p>
+        <div class="empty-cta-row">
+          <button id="btn-empty-open" type="button" class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
-          </div>
-          <h1 id="heading-home" class="hero-title">Open Any Media or Document</h1>
-          <p class="hero-subtitle">
-            Instant local playback for photos, videos, audio, and documents — 100% private and offline-ready.
-          </p>
-          <button type="button" class="btn btn-primary" style="min-height: 48px; padding: 0.65rem 1.6rem; font-size: 0.92rem;" data-pick-accept="">
-            <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3l2.2 2.5H19.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/>
-            </svg>
-            <span>Browse Device Storage</span>
+            <span>Select Media File</span>
           </button>
-
-          <div class="sample-strip" aria-label="Instant demo samples">
-            <button type="button" class="sample-pill" data-sample-kind="photo">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/></svg>
-              <span>Photo</span>
-            </button>
-            <button type="button" class="sample-pill" data-sample-kind="video">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2.2"/><polygon points="10,8.8 16,12 10,15.2"/></svg>
-              <span>Video</span>
-            </button>
-            <button type="button" class="sample-pill" data-sample-kind="audio">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
-              <span>Audio</span>
-            </button>
-            <button type="button" class="sample-pill" data-sample-kind="pdf">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/></svg>
-              <span>PDF</span>
-            </button>
-            <button type="button" class="sample-pill" data-sample-kind="csv">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-              <span>CSV</span>
-            </button>
-            <button type="button" class="sample-pill" data-sample-kind="md">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/></svg>
-              <span>Markdown</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="quick-categories">
-          <button type="button" class="category-pill" data-nav="photos">
-            <div class="cat-icon-box">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/></svg>
-            </div>
-            <div class="cat-text">
-              <div class="cat-title">Photos</div>
-              <div class="cat-meta">Pinch Zoom &amp; Tune</div>
-            </div>
-          </button>
-
-          <button type="button" class="category-pill" data-nav="videos">
-            <div class="cat-icon-box">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2.2"/><polygon points="10,8.8 16,12 10,15.2"/></svg>
-            </div>
-            <div class="cat-text">
-              <div class="cat-title">Videos</div>
-              <div class="cat-meta">Gesture Seek &amp; PiP</div>
-            </div>
-          </button>
-
-          <button type="button" class="category-pill" data-nav="audio">
-            <div class="cat-icon-box">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
-            </div>
-            <div class="cat-text">
-              <div class="cat-title">Audio</div>
-              <div class="cat-meta">60fps Visualizer</div>
-            </div>
-          </button>
-
-          <button type="button" class="category-pill" data-nav="documents">
-            <div class="cat-icon-box">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
-            </div>
-            <div class="cat-text">
-              <div class="cat-title">Documents</div>
-              <div class="cat-meta">PDF, CSV &amp; Notes</div>
-            </div>
+          <button id="btn-empty-samples" type="button" class="btn btn-secondary">
+            <span>Load Interactive Demo Files</span>
           </button>
         </div>
+      </div>
 
-        <div>
-          <div class="section-header-row" style="margin-bottom: 0.75rem;">
-            <h2 class="section-title">Recent History</h2>
-          </div>
-          <div id="recent-files-list" class="file-list"></div>
-        </div>
-      </section>
-
-      <!-- Route 1B: Open File -->
-      <section class="view-section" data-route="open" aria-labelledby="heading-open">
-        <div class="card">
-          <h2 id="heading-open" class="file-row-title">Open Local Files</h2>
-          <p class="file-row-meta" style="white-space: normal;">
-            Select one or multiple files to queue them immediately with binary header detection.
-          </p>
-          <div class="header-actions" style="flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary" data-pick-accept="">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.3l2.2 2.5H19.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/></svg>
-              <span>Pick Any File(s)</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Route 2: Photos -->
-      <section class="view-section" data-route="photos" aria-labelledby="heading-photos">
-        <div class="card">
-          <div class="section-header-row">
-            <div>
-              <h2 id="heading-photos" class="file-row-title">Photos</h2>
-              <p class="file-row-meta">Pinch-to-zoom, 90° rotate, and live filters</p>
-            </div>
-            <button type="button" class="btn btn-primary" data-pick-accept="image/*">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-4.5-4.5L7 20"/></svg>
-              <span>Open Photo</span>
-            </button>
-          </div>
-          <div id="category-list-photos" class="file-list"></div>
-        </div>
-      </section>
-
-      <!-- Route 3: Videos -->
-      <section class="view-section" data-route="videos" aria-labelledby="heading-videos">
-        <div class="card">
-          <div class="section-header-row">
-            <div>
-              <h2 id="heading-videos" class="file-row-title">Videos</h2>
-              <p class="file-row-meta">Double-tap seek, speed chips, and Picture-in-Picture</p>
-            </div>
-            <button type="button" class="btn btn-primary" data-pick-accept="video/*">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2.2"/><polygon points="10,8.8 16,12 10,15.2"/></svg>
-              <span>Open Video</span>
-            </button>
-          </div>
-          <div id="category-list-videos" class="file-list"></div>
-        </div>
-      </section>
-
-      <!-- Route 4: Audio -->
-      <section class="view-section" data-route="audio" aria-labelledby="heading-audio">
-        <div class="card">
-          <div class="section-header-row">
-            <div>
-              <h2 id="heading-audio" class="file-row-title">Audio</h2>
-              <p class="file-row-meta">60fps spectrum visualizer, speed control, and sleep timer</p>
-            </div>
-            <button type="button" class="btn btn-primary" data-pick-accept="audio/*">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
-              <span>Open Audio</span>
-            </button>
-          </div>
-          <div id="category-list-audio" class="file-list"></div>
-        </div>
-      </section>
-
-      <!-- Route 5: Documents -->
-      <section class="view-section" data-route="documents" aria-labelledby="heading-documents">
-        <div class="card">
-          <div class="section-header-row">
-            <div>
-              <h2 id="heading-documents" class="file-row-title">Documents</h2>
-              <p class="file-row-meta">PDF, Markdown preview, CSV tables, and code</p>
-            </div>
-            <button type="button" class="btn btn-primary" data-pick-accept=".pdf,.txt,.md,.csv,.tsv,.json,.xml,.log,text/*,application/pdf">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/></svg>
-              <span>Open Document</span>
-            </button>
-          </div>
-          <div id="category-list-documents" class="file-list"></div>
-        </div>
-      </section>
-
-      <!-- Route 6: Settings (Native Segmented Pill Chips & Switches — Zero <select> dropdowns!) -->
-      <section class="view-section" data-route="settings" aria-labelledby="heading-settings">
-        <div class="card">
-          <h2 id="heading-settings" class="file-row-title">Appearance &amp; Playback</h2>
-
-          <div class="file-list">
-            <div class="file-row">
-              <div>
-                <div class="file-row-title">Display Theme</div>
-                <div class="file-row-meta">True AMOLED Pitch-Black or Clean White</div>
-              </div>
-              <div class="chip-group" role="group" aria-label="Display Theme">
-                <button type="button" class="chip-btn is-active" data-pref-theme="dark">AMOLED Dark</button>
-                <button type="button" class="chip-btn" data-pref-theme="light">Clean Light</button>
-              </div>
-            </div>
-
-            <div class="file-row">
-              <div>
-                <div class="file-row-title">Accent Palette</div>
-                <div class="file-row-meta">Calm Blue or Pure Monochrome</div>
-              </div>
-              <div class="chip-group" role="group" aria-label="Accent Palette">
-                <button type="button" class="chip-btn is-active" data-pref-accent="blue">Calm Blue</button>
-                <button type="button" class="chip-btn" data-pref-accent="mono">Monochrome</button>
-              </div>
-            </div>
-
-            <div class="file-row">
-              <div>
-                <div class="file-row-title">Double-Tap Seek</div>
-                <div class="file-row-meta">Jump interval when double-tapping video</div>
-              </div>
-              <div class="chip-group" role="group" aria-label="Double-Tap Seek Interval">
-                <button type="button" class="chip-btn" data-pref-seek="5">5s</button>
-                <button type="button" class="chip-btn is-active" data-pref-seek="10">10s</button>
-                <button type="button" class="chip-btn" data-pref-seek="15">15s</button>
-                <button type="button" class="chip-btn" data-pref-seek="30">30s</button>
-              </div>
-            </div>
-
-            <div class="file-row">
-              <div>
-                <div class="file-row-title">Remember Recent Files</div>
-                <div class="file-row-meta">Keep recent session items on this device</div>
-              </div>
-              <button type="button" id="setting-remember-history" class="native-switch" role="switch" aria-checked="true" aria-label="Remember Recent Files"></button>
-            </div>
-
-            <div class="file-row">
-              <div>
-                <div class="file-row-title">Resume Video Playback</div>
-                <div class="file-row-meta">Restore timestamp when reopening a video</div>
-              </div>
-              <button type="button" id="setting-resume-playback" class="native-switch" role="switch" aria-checked="true" aria-label="Resume Video Playback"></button>
-            </div>
-          </div>
-
-          <div class="header-actions" style="flex-wrap: wrap; margin-top: 0.25rem;">
-            <button type="button" id="btn-clear-history" class="btn btn-secondary">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-              <span>Clear History</span>
-            </button>
-            <button type="button" id="btn-reset-settings" class="btn btn-secondary">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              <span>Reset Defaults</span>
-            </button>
-            <button type="button" id="btn-settings-install-help" class="btn btn-secondary">
-              <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              <span>Install Guide</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <!-- Populated History Cards Grid -->
+      <div id="history-list" class="history-list hidden" role="list"></div>
     </main>
+
+    <!-- Persistent Floating Action Button (FAB) -->
+    <button id="fab-open-file" type="button" class="fab" aria-label="Open Media File" title="Open Media File">
+      <svg class="icon-lg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
-  <!-- Native Slide-Up Action Bottom Sheet (Never clips off-screen on mobile!) -->
-  <div id="action-sheet-backdrop" class="action-sheet-backdrop" aria-hidden="true"></div>
-  <div id="file-action-menu" class="action-menu" role="menu" aria-label="File operations"></div>
+  <!-- ==================== FULLSCREEN VIEWER SHEET ==================== -->
+  <section id="viewer-view" class="viewer-sheet hidden" aria-label="Media Viewer" aria-hidden="true">
+    <!-- Top Chrome Bar -->
+    <header id="viewer-topbar" class="viewer-topbar">
+      <button id="btn-viewer-back" type="button" class="icon-btn" aria-label="Back to Home" title="Back">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
 
-  <!-- Modal Dialog -->
-  <div id="modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 id="modal-title" style="font-size: 0.98rem; font-weight: 700;">Details</h3>
-        <button type="button" id="btn-modal-close" class="btn-icon" aria-label="Close dialog">
-          <svg class="mv-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      <button id="btn-rename-trigger" type="button" class="viewer-title-btn" title="Tap to rename file">
+        <span id="viewer-filename" class="viewer-filename">media-file.jpg</span>
+        <svg class="icon-xs edit-badge" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="viewer-top-actions">
+        <button id="btn-save-file" type="button" class="btn btn-primary btn-sm" title="Save file to device">
+          <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="17 21 17 13 7 13 7 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="7 3 7 8 15 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
+          <span>Save To...</span>
         </button>
       </div>
-      <div id="modal-body"></div>
+    </header>
+
+    <!-- 4A. Immersive Image Viewer Stage -->
+    <div id="stage-image" class="viewer-stage hidden">
+      <div id="image-touch-surface" class="image-touch-surface">
+        <img id="viewer-img" class="viewer-img" alt="Active Media" draggable="false">
+      </div>
+      <div id="image-hud" class="floating-hud">
+        <button id="btn-img-zoom-out" type="button" class="hud-btn" aria-label="Zoom Out" title="Zoom Out">−</button>
+        <span id="img-zoom-label" class="hud-readout">100%</span>
+        <button id="btn-img-zoom-in" type="button" class="hud-btn" aria-label="Zoom In" title="Zoom In">+</button>
+        <div class="hud-divider"></div>
+        <button id="btn-img-zoom-reset" type="button" class="hud-btn hud-btn-text" aria-label="Reset Zoom">Reset</button>
+      </div>
+    </div>
+
+    <!-- 4B. YouTube-Style Video Player Stage -->
+    <div id="stage-video" class="viewer-stage hidden">
+      <div id="video-container" class="video-container">
+        <video id="viewer-video" class="viewer-video" playsinline preload="metadata"></video>
+
+        <div id="video-overlay" class="video-overlay">
+          <!-- Center Transport Controls -->
+          <div class="video-center-controls">
+            <button id="btn-video-rw" type="button" class="video-circle-btn" aria-label="Rewind 10 seconds">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="seek-tag">-10s</span>
+            </button>
+
+            <button id="btn-video-play" type="button" class="video-play-hero" aria-label="Play or Pause Video">
+              <svg id="icon-video-play" class="icon-xl" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/>
+              </svg>
+              <svg id="icon-video-pause" class="icon-xl hidden" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+                <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+              </svg>
+            </button>
+
+            <button id="btn-video-ff" type="button" class="video-circle-btn" aria-label="Forward 10 seconds">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M13 5l7 7-7 7M5 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="seek-tag">+10s</span>
+            </button>
+          </div>
+
+          <!-- Bottom Scrubber & Action Deck -->
+          <div class="video-bottom-bar">
+            <div class="scrubber-row">
+              <input
+                type="range"
+                id="video-scrubber"
+                class="media-scrubber"
+                min="0"
+                max="1000"
+                value="0"
+                step="1"
+                aria-label="Video Timeline"
+              >
+            </div>
+            <div class="video-meta-row">
+              <button id="btn-video-time" type="button" class="time-pill" title="Tap to toggle remaining time">
+                <span id="video-elapsed">00:00</span>
+                <span class="time-sep">/</span>
+                <span id="video-duration">00:00</span>
+              </button>
+
+              <div class="video-right-controls">
+                <button id="btn-video-speed" type="button" class="pill-btn" aria-label="Playback Speed">1.0x</button>
+                <button id="btn-video-fullscreen" type="button" class="icon-btn-sm" aria-label="Toggle Fullscreen">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4C. Interactive Audio Player & Visualizer Stage -->
+    <div id="stage-audio" class="viewer-stage hidden">
+      <audio id="viewer-audio" preload="metadata" crossorigin="anonymous"></audio>
+      <div class="audio-card">
+        <!-- Rotating Vinyl / Disc Indicator -->
+        <div class="vinyl-wrapper">
+          <div id="audio-vinyl" class="vinyl-disc">
+            <div class="vinyl-grooves"></div>
+            <div class="vinyl-label">
+              <div class="vinyl-spindle"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Track Metadata -->
+        <div class="audio-track-info">
+          <h2 id="audio-title" class="audio-title">Audio Track</h2>
+          <p id="audio-subtitle" class="audio-subtitle">MP3 • 0.0 MB</p>
+        </div>
+
+        <!-- Real-Time Frequency Bar Visualizer Canvas -->
+        <div class="visualizer-shell">
+          <canvas id="audio-visualizer" width="480" height="120"></canvas>
+        </div>
+
+        <!-- Timeline Scrubber & Timers -->
+        <div class="audio-timeline-group">
+          <input
+            type="range"
+            id="audio-scrubber"
+            class="media-scrubber"
+            min="0"
+            max="1000"
+            value="0"
+            step="1"
+            aria-label="Audio Timeline"
+          >
+          <div class="audio-timers">
+            <span id="audio-elapsed">00:00</span>
+            <span id="audio-remaining">-00:00</span>
+          </div>
+        </div>
+
+        <!-- Full Transport Control Deck -->
+        <div class="audio-transport-deck">
+          <button id="btn-audio-loop" type="button" class="pill-btn" aria-pressed="false" title="Toggle Loop">
+            <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="17 1 21 5 17 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 13v2a4 4 0 01-4 4H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Loop</span>
+          </button>
+
+          <button id="btn-audio-rw" type="button" class="audio-skip-btn" aria-label="Rewind 10 seconds">-10s</button>
+
+          <button id="btn-audio-play" type="button" class="audio-play-fab" aria-label="Play or Pause Audio">
+            <svg id="icon-audio-play" class="icon-lg" viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/>
+            </svg>
+            <svg id="icon-audio-pause" class="icon-lg hidden" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+              <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <button id="btn-audio-ff" type="button" class="audio-skip-btn" aria-label="Forward 10 seconds">+10s</button>
+
+          <button id="btn-audio-speed" type="button" class="pill-btn" aria-label="Audio Playback Speed">1.0x</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4D. Google Drive-Style Continuous-Scroll PDF Viewer Stage -->
+    <div id="stage-pdf" class="viewer-stage hidden">
+      <div id="pdf-scroll-container" class="pdf-scroll-container">
+        <div id="pdf-pages-list" class="pdf-pages-list"></div>
+      </div>
+
+      <div id="pdf-hud" class="floating-hud">
+        <span id="pdf-page-indicator" class="hud-readout">Page 1 / 1</span>
+        <div class="hud-divider"></div>
+        <button id="btn-pdf-zoom-out" type="button" class="hud-btn" aria-label="PDF Zoom Out">−</button>
+        <span id="pdf-zoom-label" class="hud-readout">100%</span>
+        <button id="btn-pdf-zoom-in" type="button" class="hud-btn" aria-label="PDF Zoom In">+</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== RENAME MODAL ==================== -->
+  <div id="rename-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="rename-modal-title">
+    <div class="modal-sheet">
+      <h2 id="rename-modal-title" class="modal-title">Rename Media File</h2>
+      <p class="modal-subtitle">The original file extension is preserved automatically.</p>
+      <form id="rename-form" class="rename-form">
+        <div class="rename-input-group">
+          <input
+            type="text"
+            id="rename-input"
+            class="rename-input"
+            autocomplete="off"
+            spellcheck="false"
+            required
+            aria-label="New Filename"
+          >
+          <span id="rename-ext-badge" class="rename-ext-badge">.jpg</span>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-rename-cancel" type="button" class="btn btn-ghost">Cancel</button>
+          <button id="btn-rename-submit" type="submit" class="btn btn-primary">Save Name</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Toast Notifications -->
-  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <!-- ==================== CLEAR ALL CONFIRMATION MODAL ==================== -->
+  <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div class="modal-sheet">
+      <h2 id="confirm-modal-title" class="modal-title">Clear Recent History?</h2>
+      <p class="modal-subtitle">This removes all cached media items from Omniview's local IndexedDB storage. Your original device files remain untouched.</p>
+      <div class="modal-actions">
+        <button id="btn-confirm-cancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="btn-confirm-accept" type="button" class="btn btn-danger">Clear All</button>
+      </div>
+    </div>
+  </div>
 
-  <script type="module" src="./js/app.js"></script>
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Local-First PDF.js Vendor Script (with automatic CDN upgrade) -->
+  <script src="./vendor/pdf.min.js"></script>
+  <!-- Core Application Logic -->
+  <script src="./app.js"></script>
 </body>
 </html>
