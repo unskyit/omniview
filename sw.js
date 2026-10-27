@@ -1,11 +1,11 @@
 /**
  * Omniview Service Worker (sw.js)
  * - Offline-first App Shell caching
- * - Android Web Share Target API POST interception (/share-target)
- * - Zero-bloat raw File storage into IndexedDB (OmniviewDB -> shared_queue)
+ * - Android Web Share Target API POST interception
+ * - Now handles MULTIPLE queued file parsing directly to IndexedDB
  */
 
-const CACHE_NAME = 'omniview-cache-v1.0.0';
+const CACHE_NAME = 'omniview-cache-v1.0.1';
 const DB_NAME = 'OmniviewDB';
 const DB_VERSION = 1;
 const STORE_SHARED = 'shared_queue';
@@ -24,10 +24,6 @@ const APP_SHELL_ASSETS = [
   './vendor/pdf.worker.min.js'
 ];
 
-/**
- * Open OmniviewDB in the Service Worker context.
- * Creates both `shared_queue` and `recent_history` object stores so schema is unified.
- */
 function openOmniviewDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -47,9 +43,6 @@ function openOmniviewDB() {
   });
 }
 
-/**
- * Store a raw File/Blob directly into `shared_queue` without Base64 conversion.
- */
 async function enqueueSharedFile(file, meta = {}) {
   const db = await openOmniviewDB();
   return new Promise((resolve, reject) => {
@@ -63,14 +56,8 @@ async function enqueueSharedFile(file, meta = {}) {
       timestamp: Date.now()
     };
     const req = store.add(record);
-    tx.oncomplete = () => {
-      db.close();
-      resolve(req.result);
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
+    tx.oncomplete = () => { db.close(); resolve(req.result); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 
@@ -78,11 +65,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       for (const asset of APP_SHELL_ASSETS) {
-        try {
-          await cache.add(asset);
-        } catch (err) {
-          console.warn('[Omniview SW] Optional asset skipped during install:', asset, err);
-        }
+        try { await cache.add(asset); } catch (err) {}
       }
     }).then(() => self.skipWaiting())
   );
@@ -91,110 +74,76 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-          return null;
-        })
-      )
+      Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : null))
     ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-
-  // Intercept Web Share Target POST requests targeting /share-target
-  if (
-    event.request.method === 'POST' &&
-    (url.pathname.endsWith('/share-target') || url.pathname === '/share-target')
-  ) {
+  if (event.request.method === 'POST' && (url.pathname.endsWith('/share-target') || url.pathname === '/share-target')) {
     event.respondWith(handleShareTargetPost(event));
     return;
   }
-
-  // Standard GET caching strategy: Cache-First for App Shell, Network fallback
   if (event.request.method === 'GET') {
     event.respondWith(
       caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(event.request)
-          .then((networkResponse) => {
-            if (
-              networkResponse &&
-              networkResponse.status === 200 &&
-              networkResponse.type === 'basic'
-            ) {
-              const clone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            if (event.request.mode === 'navigate') {
-              return caches.match('./index.html');
-            }
-            return new Response('Offline', { status: 503, statusText: 'Offline' });
-          });
+        return cachedResponse || fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        }).catch(() => {
+          if (event.request.mode === 'navigate') return caches.match('./index.html');
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        });
       })
     );
   }
 });
 
-/**
- * Process multipart/form-data POST from Android Share Sheet:
- * 1. Extract raw File object(s) from formData
- * 2. Write directly to IndexedDB `OmniviewDB -> shared_queue`
- * 3. Broadcast `SHARED_FILE_READY` to active clients
- * 4. Return HTTP 303 See Other redirect to `./?shared=1`
- */
 async function handleShareTargetPost(event) {
   try {
     const formData = await event.request.formData();
     const mediaFiles = formData.getAll('media');
     const fallbackFile = formData.get('file') || formData.get('files');
     const title = formData.get('title') || '';
+    
+    let processedCount = 0;
 
-    let extractedFile = null;
+    // Process all files for Queue support
     if (mediaFiles && mediaFiles.length > 0) {
-      extractedFile = mediaFiles.find((item) => item instanceof File || item instanceof Blob);
-    }
-    if (!extractedFile && (fallbackFile instanceof File || fallbackFile instanceof Blob)) {
-      extractedFile = fallbackFile;
-    }
-
-    // Also scan all formData entries in case the OS used a custom field key
-    if (!extractedFile) {
-      for (const [, value] of formData.entries()) {
-        if (value instanceof File || value instanceof Blob) {
-          extractedFile = value;
-          break;
+      for (const file of mediaFiles) {
+        if (file instanceof File || file instanceof Blob) {
+          await enqueueSharedFile(file, { title });
+          processedCount++;
         }
       }
     }
 
-    if (extractedFile) {
-      await enqueueSharedFile(extractedFile, { title });
+    if (processedCount === 0 && (fallbackFile instanceof File || fallbackFile instanceof Blob)) {
+      await enqueueSharedFile(fallbackFile, { title });
+      processedCount++;
+    }
 
-      const clientList = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true
-      });
-      for (const client of clientList) {
-        client.postMessage({
-          type: 'SHARED_FILE_READY',
-          timestamp: Date.now()
-        });
+    if (processedCount === 0) {
+      for (const [, value] of formData.entries()) {
+        if (value instanceof File || value instanceof Blob) {
+          await enqueueSharedFile(value, { title });
+          processedCount++;
+        }
       }
     }
 
+    if (processedCount > 0) {
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientList) {
+        client.postMessage({ type: 'SHARED_FILE_READY', timestamp: Date.now() });
+      }
+    }
     return Response.redirect('./?shared=1', 303);
   } catch (error) {
-    console.error('[Omniview SW] Failed to process shared file:', error);
     return Response.redirect('./?shared=error', 303);
   }
 }

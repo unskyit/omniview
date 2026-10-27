@@ -1,7 +1,7 @@
 {
   "id": "./?source=pwa",
-  "name": "Omniview — Universal Media Viewer & Editor",
-  "short_name": "Omniview",
+  "name": "Omniview — Simply Viewer",
+  "short_name": "Simply Viewer",
   "description": "High-performance AMOLED universal media viewer, audio visualizer, continuous PDF reader, and native file saver with Android Web Share Target integration.",
   "start_url": "./index.html",
   "scope": "./",
@@ -11,18 +11,8 @@
   "theme_color": "#000000",
   "categories": ["utilities", "productivity", "photo", "entertainment"],
   "icons": [
-    {
-      "src": "./assets/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "./assets/logo.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    }
+    { "src": "./assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./assets/logo.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -30,26 +20,14 @@
       "short_name": "Open File",
       "description": "Launch file picker to open an image, video, audio track, or PDF",
       "url": "./index.html?action=open",
-      "icons": [
-        {
-          "src": "./assets/shortcut-open.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "icons": [{ "src": "./assets/shortcut-open.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
       "name": "Recent History",
       "short_name": "Recent",
       "description": "Browse recently opened and shared media files",
       "url": "./index.html?action=recent",
-      "icons": [
-        {
-          "src": "./assets/shortcut-recent.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "icons": [{ "src": "./assets/shortcut-recent.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ],
   "share_target": {
@@ -63,28 +41,7 @@
       "files": [
         {
           "name": "media",
-          "accept": [
-            "image/*",
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".webp",
-            ".gif",
-            ".svg",
-            "video/*",
-            ".mp4",
-            ".webm",
-            ".mkv",
-            ".mov",
-            "audio/*",
-            ".mp3",
-            ".wav",
-            ".ogg",
-            ".m4a",
-            ".flac",
-            "application/pdf",
-            ".pdf"
-          ]
+          "accept": ["image/*", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", "video/*", ".mp4", ".webm", ".mkv", ".mov", "audio/*", ".mp3", ".wav", ".ogg", ".m4a", ".flac", "application/pdf", ".pdf"]
         }
       ]
     }

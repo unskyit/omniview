@@ -9,32 +9,30 @@
   <meta name="apple-mobile-web-app-title" content="Omniview">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Omniview — High-performance AMOLED universal media viewer, audio visualizer, continuous PDF reader, and native saver.">
-  <title>Omniview — Universal Media Viewer</title>
+  <title>Omniview — Simply Viewer</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
   <link rel="apple-touch-icon" href="./assets/logo.svg">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <!-- Hidden File Input for Local Media Selection -->
   <input
     type="file"
     id="file-input"
     class="visually-hidden"
+    multiple
     accept="image/*,video/*,audio/*,application/pdf,.jpg,.jpeg,.png,.webp,.gif,.svg,.mp4,.webm,.mkv,.mov,.mp3,.wav,.ogg,.m4a,.flac,.pdf"
   >
 
-  <!-- ==================== HOME VIEW ==================== -->
   <div id="home-view" class="app-shell">
     <header class="app-header">
       <div class="brand-group">
         <img src="./assets/logo.svg" alt="Omniview Logo" class="brand-logo" width="38" height="38">
         <div class="brand-titles">
           <h1 class="brand-name">Omniview</h1>
-          <span class="brand-subtitle">Universal Media Engine</span>
+          <span class="brand-subtitle">Simply Viewer</span>
         </div>
       </div>
-
       <div class="header-actions">
         <button id="btn-demo-media" type="button" class="btn btn-ghost" title="Generate Sample Media to Test Viewers">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -42,24 +40,15 @@
           </svg>
           <span class="btn-label">Sample Media</span>
         </button>
-
         <button id="btn-install-pwa" type="button" class="btn btn-accent hidden" aria-label="Install PWA">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span>Install App</span>
         </button>
-
-        <button id="btn-open-header" type="button" class="btn btn-primary">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span>Open Local File</span>
-        </button>
       </div>
     </header>
 
-    <!-- Category Filter Chips & Toolbar -->
     <section class="controls-strip" aria-label="Media Category Filters">
       <div class="filter-chips" id="filter-chips" role="tablist">
         <button type="button" class="chip active" data-filter="all" role="tab" aria-selected="true">All Files</button>
@@ -68,7 +57,6 @@
         <button type="button" class="chip" data-filter="audio" role="tab" aria-selected="false">Audio</button>
         <button type="button" class="chip" data-filter="pdf" role="tab" aria-selected="false">PDFs</button>
       </div>
-
       <div class="history-meta-bar">
         <span id="history-count-label" class="history-count">0 items in local store</span>
         <button id="btn-clear-all" type="button" class="btn-text-danger hidden" aria-label="Clear All History">
@@ -80,9 +68,7 @@
       </div>
     </section>
 
-    <!-- Recent History List Container -->
     <main class="history-stage" id="history-stage">
-      <!-- Empty State Illustration -->
       <div id="empty-state" class="empty-state">
         <div class="empty-illustration">
           <svg viewBox="0 0 96 96" width="72" height="72" aria-hidden="true">
@@ -92,26 +78,23 @@
         </div>
         <h2 class="empty-title">No Media Opened Yet</h2>
         <p class="empty-desc">
-          Open a local photo, 4K video, lossless audio track, or PDF document—or share directly from any Android app via the system Share Sheet.
+          Open media directly from your device or share multiple files simultaneously to build a queue.
         </p>
         <div class="empty-cta-row">
           <button id="btn-empty-open" type="button" class="btn btn-primary">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
-            <span>Select Media File</span>
+            <span>Select Media</span>
           </button>
           <button id="btn-empty-samples" type="button" class="btn btn-secondary">
-            <span>Load Interactive Demo Files</span>
+            <span>Demo Files</span>
           </button>
         </div>
       </div>
-
-      <!-- Populated History Cards Grid -->
       <div id="history-list" class="history-list hidden" role="list"></div>
     </main>
 
-    <!-- Persistent Floating Action Button (FAB) -->
     <button id="fab-open-file" type="button" class="fab" aria-label="Open Media File" title="Open Media File">
       <svg class="icon-lg" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
@@ -119,23 +102,19 @@
     </button>
   </div>
 
-  <!-- ==================== FULLSCREEN VIEWER SHEET ==================== -->
   <section id="viewer-view" class="viewer-sheet hidden" aria-label="Media Viewer" aria-hidden="true">
-    <!-- Top Chrome Bar -->
     <header id="viewer-topbar" class="viewer-topbar">
       <button id="btn-viewer-back" type="button" class="icon-btn" aria-label="Back to Home" title="Back">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-
       <button id="btn-rename-trigger" type="button" class="viewer-title-btn" title="Tap to rename file">
         <span id="viewer-filename" class="viewer-filename">media-file.jpg</span>
         <svg class="icon-xs edit-badge" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-
       <div class="viewer-top-actions">
         <button id="btn-save-file" type="button" class="btn btn-primary btn-sm" title="Save file to device">
           <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
@@ -143,12 +122,11 @@
             <polyline points="17 21 17 13 7 13 7 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <polyline points="7 3 7 8 15 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Save To...</span>
+          <span class="btn-label">Save</span>
         </button>
       </div>
     </header>
 
-    <!-- 4A. Immersive Image Viewer Stage -->
     <div id="stage-image" class="viewer-stage hidden">
       <div id="image-touch-surface" class="image-touch-surface">
         <img id="viewer-img" class="viewer-img" alt="Active Media" draggable="false">
@@ -162,21 +140,19 @@
       </div>
     </div>
 
-    <!-- 4B. YouTube-Style Video Player Stage -->
     <div id="stage-video" class="viewer-stage hidden">
       <div id="video-container" class="video-container">
         <video id="viewer-video" class="viewer-video" playsinline preload="metadata"></video>
-
-        <div id="video-overlay" class="video-overlay">
-          <!-- Center Transport Controls -->
+        <div id="video-double-tap-indicator" class="video-double-tap-indicator hidden">
+          <span id="video-seek-label"></span>
+        </div>
+        <div id="video-overlay" class="video-overlay controls-hidden">
           <div class="video-center-controls">
             <button id="btn-video-rw" type="button" class="video-circle-btn" aria-label="Rewind 10 seconds">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <span class="seek-tag">-10s</span>
             </button>
-
             <button id="btn-video-play" type="button" class="video-play-hero" aria-label="Play or Pause Video">
               <svg id="icon-video-play" class="icon-xl" viewBox="0 0 24 24" aria-hidden="true">
                 <polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/>
@@ -186,28 +162,15 @@
                 <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
               </svg>
             </button>
-
             <button id="btn-video-ff" type="button" class="video-circle-btn" aria-label="Forward 10 seconds">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M13 5l7 7-7 7M5 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <span class="seek-tag">+10s</span>
             </button>
           </div>
-
-          <!-- Bottom Scrubber & Action Deck -->
           <div class="video-bottom-bar">
             <div class="scrubber-row">
-              <input
-                type="range"
-                id="video-scrubber"
-                class="media-scrubber"
-                min="0"
-                max="1000"
-                value="0"
-                step="1"
-                aria-label="Video Timeline"
-              >
+              <input type="range" id="video-scrubber" class="media-scrubber" min="0" max="1000" value="0" step="1" aria-label="Video Timeline">
             </div>
             <div class="video-meta-row">
               <button id="btn-video-time" type="button" class="time-pill" title="Tap to toggle remaining time">
@@ -215,7 +178,6 @@
                 <span class="time-sep">/</span>
                 <span id="video-duration">00:00</span>
               </button>
-
               <div class="video-right-controls">
                 <button id="btn-video-speed" type="button" class="pill-btn" aria-label="Playback Speed">1.0x</button>
                 <button id="btn-video-fullscreen" type="button" class="icon-btn-sm" aria-label="Toggle Fullscreen">
@@ -230,50 +192,29 @@
       </div>
     </div>
 
-    <!-- 4C. Interactive Audio Player & Visualizer Stage -->
     <div id="stage-audio" class="viewer-stage hidden">
       <audio id="viewer-audio" preload="metadata" crossorigin="anonymous"></audio>
       <div class="audio-card">
-        <!-- Rotating Vinyl / Disc Indicator -->
         <div class="vinyl-wrapper">
           <div id="audio-vinyl" class="vinyl-disc">
             <div class="vinyl-grooves"></div>
-            <div class="vinyl-label">
-              <div class="vinyl-spindle"></div>
-            </div>
+            <div class="vinyl-label"><div class="vinyl-spindle"></div></div>
           </div>
         </div>
-
-        <!-- Track Metadata -->
         <div class="audio-track-info">
           <h2 id="audio-title" class="audio-title">Audio Track</h2>
           <p id="audio-subtitle" class="audio-subtitle">MP3 • 0.0 MB</p>
         </div>
-
-        <!-- Real-Time Frequency Bar Visualizer Canvas -->
         <div class="visualizer-shell">
           <canvas id="audio-visualizer" width="480" height="120"></canvas>
         </div>
-
-        <!-- Timeline Scrubber & Timers -->
         <div class="audio-timeline-group">
-          <input
-            type="range"
-            id="audio-scrubber"
-            class="media-scrubber"
-            min="0"
-            max="1000"
-            value="0"
-            step="1"
-            aria-label="Audio Timeline"
-          >
+          <input type="range" id="audio-scrubber" class="media-scrubber" min="0" max="1000" value="0" step="1" aria-label="Audio Timeline">
           <div class="audio-timers">
             <span id="audio-elapsed">00:00</span>
             <span id="audio-remaining">-00:00</span>
           </div>
         </div>
-
-        <!-- Full Transport Control Deck -->
         <div class="audio-transport-deck">
           <button id="btn-audio-loop" type="button" class="pill-btn" aria-pressed="false" title="Toggle Loop">
             <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
@@ -283,32 +224,21 @@
             </svg>
             <span>Loop</span>
           </button>
-
           <button id="btn-audio-rw" type="button" class="audio-skip-btn" aria-label="Rewind 10 seconds">-10s</button>
-
           <button id="btn-audio-play" type="button" class="audio-play-fab" aria-label="Play or Pause Audio">
-            <svg id="icon-audio-play" class="icon-lg" viewBox="0 0 24 24" aria-hidden="true">
-              <polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/>
-            </svg>
-            <svg id="icon-audio-pause" class="icon-lg hidden" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
-              <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
-            </svg>
+            <svg id="icon-audio-play" class="icon-lg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
+            <svg id="icon-audio-pause" class="icon-lg hidden" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></svg>
           </button>
-
           <button id="btn-audio-ff" type="button" class="audio-skip-btn" aria-label="Forward 10 seconds">+10s</button>
-
           <button id="btn-audio-speed" type="button" class="pill-btn" aria-label="Audio Playback Speed">1.0x</button>
         </div>
       </div>
     </div>
 
-    <!-- 4D. Google Drive-Style Continuous-Scroll PDF Viewer Stage -->
     <div id="stage-pdf" class="viewer-stage hidden">
       <div id="pdf-scroll-container" class="pdf-scroll-container">
         <div id="pdf-pages-list" class="pdf-pages-list"></div>
       </div>
-
       <div id="pdf-hud" class="floating-hud">
         <span id="pdf-page-indicator" class="hud-readout">Page 1 / 1</span>
         <div class="hud-divider"></div>
@@ -319,22 +249,13 @@
     </div>
   </section>
 
-  <!-- ==================== RENAME MODAL ==================== -->
   <div id="rename-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="rename-modal-title">
     <div class="modal-sheet">
       <h2 id="rename-modal-title" class="modal-title">Rename Media File</h2>
       <p class="modal-subtitle">The original file extension is preserved automatically.</p>
       <form id="rename-form" class="rename-form">
         <div class="rename-input-group">
-          <input
-            type="text"
-            id="rename-input"
-            class="rename-input"
-            autocomplete="off"
-            spellcheck="false"
-            required
-            aria-label="New Filename"
-          >
+          <input type="text" id="rename-input" class="rename-input" autocomplete="off" spellcheck="false" required aria-label="New Filename">
           <span id="rename-ext-badge" class="rename-ext-badge">.jpg</span>
         </div>
         <div class="modal-actions">
@@ -345,11 +266,10 @@
     </div>
   </div>
 
-  <!-- ==================== CLEAR ALL CONFIRMATION MODAL ==================== -->
   <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
     <div class="modal-sheet">
       <h2 id="confirm-modal-title" class="modal-title">Clear Recent History?</h2>
-      <p class="modal-subtitle">This removes all cached media items from Omniview's local IndexedDB storage. Your original device files remain untouched.</p>
+      <p class="modal-subtitle">This removes all cached media items from Omniview's local storage. Original device files remain untouched.</p>
       <div class="modal-actions">
         <button id="btn-confirm-cancel" type="button" class="btn btn-ghost">Cancel</button>
         <button id="btn-confirm-accept" type="button" class="btn btn-danger">Clear All</button>
@@ -357,12 +277,9 @@
     </div>
   </div>
 
-  <!-- ==================== TOAST NOTIFICATION ==================== -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <!-- Local-First PDF.js Vendor Script (with automatic CDN upgrade) -->
   <script src="./vendor/pdf.min.js"></script>
-  <!-- Core Application Logic -->
   <script src="./app.js"></script>
 </body>
 </html>
