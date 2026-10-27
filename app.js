@@ -1,9 +1,10 @@
 /**
  * Simply Viewer Core Application Engine (app.js)
  * - True Light/Dark Mode Manager
- * - Race-Condition safe Video playback (solves background playback bug)
- * - Canvas frame extraction for Video Thumbnails in Queue Strip
- * - Native swipe gestures & dynamic ResizeObserver for Audio Canvas
+ * - Race-Condition safe Video playback
+ * - Canvas frame extraction for Video Thumbnails
+ * - Native swipe gestures & dynamic ResizeObserver
+ * - Restored PWA Install Button DOM reference
  */
 
 (function () {
@@ -31,6 +32,7 @@
     btnThemeToggle: document.getElementById('btn-theme-toggle'),
     fileInput: document.getElementById('file-input'),
     btnDemoMedia: document.getElementById('btn-demo-media'),
+    btnInstallPwa: document.getElementById('btn-install-pwa'), // <-- FIXED: Restored DOM reference
     btnEmptyOpen: document.getElementById('btn-empty-open'),
     fabOpenFile: document.getElementById('fab-open-file'),
     filterChips: document.getElementById('filter-chips'),
@@ -120,7 +122,6 @@
       if (localStorage.getItem('theme') === 'system' || !localStorage.getItem('theme')) applyTheme('system');
     });
     
-    // Toggle behavior: if system is light -> dark. If dark -> light.
     dom.btnThemeToggle.addEventListener('click', () => {
        const current = document.documentElement.getAttribute('data-theme');
        let nextTheme = current === 'dark' ? 'light' : 'dark';
@@ -358,12 +359,11 @@
         const video = document.createElement('video');
         video.autoplay = false; video.muted = true; video.playsInline = true;
         video.src = URL.createObjectURL(file);
-        video.onloadeddata = () => { video.currentTime = 1; }; // Extract 1s mark
+        video.onloadeddata = () => { video.currentTime = 1; }; 
         video.onseeked = () => {
             const canvas = document.createElement('canvas');
             canvas.width = 160; canvas.height = 160;
             const ctx = canvas.getContext('2d');
-            // Center crop fill
             const ratio = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
             const w = video.videoWidth * ratio, h = video.videoHeight * ratio;
             ctx.drawImage(video, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
@@ -414,7 +414,6 @@
   async function loadQueueItem(index, fromShare = false) {
     if (index < 0 || index >= state.queue.length) return;
     
-    // Crucial: Release old resources immediately so we don't leak RAM on huge queues
     releaseActiveMediaResources(); 
     
     state.queueIndex = index;
@@ -438,7 +437,6 @@
     state.isViewerOpen = true;
     state.isClosingViewer = false;
     
-    // Ensure history state is updated properly, preventing immediate popstate backout on share
     if (window.location.hash !== '#viewer' && window.location.hash !== '#rename') {
         if (fromShare) {
             history.replaceState({ view: 'viewer' }, '', '#viewer');
@@ -571,7 +569,7 @@
     dom.btnImgZoomReset.addEventListener('click', (e) => { e.stopPropagation(); zoomImageTo(1, true); });
   }
 
-  /* VIDEO PLAYER (Race Condition Free) */
+  /* VIDEO PLAYER */
   function launchVideoPlayer(objectUrl) {
     dom.stageVideo.classList.remove('hidden'); state.video.speedIndex = 2; dom.btnVideoSpeed.textContent = '1.0x';
     dom.videoScrubber.value = '0'; updateScrubberFill(dom.videoScrubber); dom.videoElapsed.textContent = '00:00'; dom.videoDuration.textContent = '00:00';
@@ -580,7 +578,7 @@
     state.video.playPromise = dom.viewerVideo.play();
     if (state.video.playPromise !== undefined) {
         state.video.playPromise.then(() => {
-            if (state.isClosingViewer) { dom.viewerVideo.pause(); } // Race condition fix
+            if (state.isClosingViewer) { dom.viewerVideo.pause(); } 
             else { syncVideoPlayButtons(); }
         }).catch(() => { syncVideoPlayButtons(); });
     }
@@ -635,7 +633,7 @@
     dom.btnVideoFullscreen.addEventListener('click', async (e) => { e.stopPropagation(); try { if (!document.fullscreenElement) { dom.stageVideo.requestFullscreen ? await dom.stageVideo.requestFullscreen() : video.webkitEnterFullscreen(); } else await document.exitFullscreen(); } catch (err) {} showVideoOverlayWithAutoHide(); });
   }
 
-  /* AUDIO PLAYER (Canvas ResizeObserver fixing squish bug) */
+  /* AUDIO PLAYER (Canvas ResizeObserver) */
   function launchAudioPlayer(objectUrl, record) {
     dom.stageAudio.classList.remove('hidden');
     state.audio.speedIndex = 2; state.audio.isLooping = false;
@@ -864,7 +862,7 @@
   function closeViewer(fromPopstate = false) {
     if (!state.isViewerOpen) return;
     
-    state.isClosingViewer = true; // Flags race condition for async play()
+    state.isClosingViewer = true; 
     if(state.queue) { for(let item of state.queue) { if(item.thumbUrl) { URL.revokeObjectURL(item.thumbUrl); item.thumbUrl = null; } } }
     state.queue = [];
     
@@ -954,7 +952,6 @@
     initTheme(); setupHistoryRouter(); bindGlobalUiEvents(); setupSwipeGestures(); setupImageViewerGestures(); setupVideoPlayerControls(); setupAudioPlayerControls(); setupPdfViewerControls(); registerServiceWorkerAndShareListener();
     await initDatabase(); await loadAllHistoryRecords(); renderHistoryList();
     
-    // Purge the messy share query from the URL without triggering a buggy popstate backout
     if (window.location.search.includes('shared=')) {
         history.replaceState(history.state, '', window.location.pathname + window.location.hash);
     }
